@@ -133,7 +133,7 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     }
 
     accel_body = Vector3f(pkt.ax, pkt.ay, -pkt.az - GRAVITY_MSS);
-    gyro = Vector3f(pkt.d_roll, pkt.d_pitch, -pkt.d_yaw);
+    gyro = Vector3f(radians(pkt.d_roll), radians(pkt.d_pitch), radians(pkt.d_yaw));
     
 
     loc2.lat = pkt.position_latitude * 1.0e7;
@@ -153,26 +153,28 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     airspeed = pkt.v_eas;
     airspeed_pitot = pkt.v_eas;
 
-    dcm.from_euler(pkt.roll, pkt.pitch, pkt.yaw);
+    dcm.from_euler(radians(pkt.roll), radians(pkt.pitch), radians(pkt.yaw));
 
     velocity_ef = dcm * Vector3f(pkt.vx, pkt.vy, pkt.vz); //
 
     time_now_us += deltat * 1.0e6;
-    printf("Delta: %f Time: %f\n", deltat, time_now_us);
 
-    printf("Accel.x %f\n", accel_body.x);
-    printf("Accel.y %f\n", accel_body.y);
-    printf("Accel.z %f\n", accel_body.z);
-    printf("Gyro.x  %f\n", gyro.x);
-    printf("Gyro.y  %f\n", gyro.y);
-    printf("Gyro.z  %f\n", gyro.z);
-    printf("Pos.x %f\n",   position.x);
-    printf("Pos.y %f\n",   position.y);
-    printf("Pos.z %f\n",   position.z);
-    printf("Roll %f\n",    pkt.roll);
-    printf("Pitch %f\n",   pkt.pitch);
-    printf("Yaw %f\n",     pkt.yaw);
+    if (0) {
+        printf("Delta: %f Time: %f\n", deltat, time_now_us);
 
+        printf("Accel.x %f\n", accel_body.x);
+        printf("Accel.y %f\n", accel_body.y);
+        printf("Accel.z %f\n", accel_body.z);
+        printf("Gyro.x  %f\n", gyro.x);
+        printf("Gyro.y  %f\n", gyro.y);
+        printf("Gyro.z  %f\n", gyro.z);
+        printf("Pos.x %f\n",   position.x);
+        printf("Pos.y %f\n",   position.y);
+        printf("Pos.z %f\n",   position.z);
+        printf("Roll %f\n",    pkt.roll);
+        printf("Pitch %f\n",   pkt.pitch);
+        printf("Yaw %f\n",     pkt.yaw);
+    }
 
     if (deltat < 0.01 && deltat > 0) {
         adjust_frame_time(1.0/deltat);
