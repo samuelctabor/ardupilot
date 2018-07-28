@@ -117,7 +117,7 @@ float POMDSoarAlgorithm::assess_thermalability(uint8_t exit_mode)
 
     if (exit_mode == 1)
     {
-        float expected_thermalling_sink = _sc->correct_netto_rate(1, 0.0f, radians(_pomdp_roll_cmd), aspd);
+        float expected_thermalling_sink = _sc->correct_netto_rate(0.0f, radians(_pomdp_roll_cmd), aspd);
         float dist_sqr = _sc->_ekf.X[2] * _sc->_ekf.X[2] + _sc->_ekf.X[3] * _sc->_ekf.X[3];
         thermalability = (_sc->_ekf.X[0] * expf(-dist_sqr / powf(_sc->_ekf.X[1], 2))) - expected_thermalling_sink;
     }
@@ -129,7 +129,7 @@ float POMDSoarAlgorithm::assess_thermalability(uint8_t exit_mode)
 
         for (int i = 0; i < n_samps; i++)
         {
-            float expected_thermalling_sink = _sc->correct_netto_rate(1, 0.0f, radians(theta), aspd);
+            float expected_thermalling_sink = _sc->correct_netto_rate(0.0f, radians(theta), aspd);
             float r = (aspd * aspd) / (GRAVITY_MSS * tanf(radians(theta)));
             thermalability = MAX(thermalability, (_sc->_ekf.X[0] * expf(-(r*r) / powf(_sc->_ekf.X[1], 2))) - expected_thermalling_sink);
             theta += theta_step;
@@ -375,9 +375,8 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
             is_ok_to_stop = true;
         }
 
-        DataFlash_Class::instance()->Log_Write("POMP", "TimeUS,id,n,k,action,x,y,sign,lat,lng,rlat,rlng,roll,mode,Q", "QQHHBfffLLLLfB",
+        DataFlash_Class::instance()->Log_Write("POMP", "TimeUS,n,k,action,x,y,sign,lat,lng,rlat,rlng,roll,mode,Q", "QQHHBfffLLLLfB",
             AP_HAL::micros64(),
-            _sc->_thermal_id,
             pomdp_n,
             pomdp_k,
             action,
@@ -391,9 +390,8 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
             (double)_pomdp_roll_cmd,
             (uint8_t)max_lift,
             (double)_solver.get_action_Q(action));
-        DataFlash_Class::instance()->Log_Write("POMT", "TimeUS,id,loop_min,loop_max,loop_time,solve_time,load,n,k", "QQQQQQHHH",
+        DataFlash_Class::instance()->Log_Write("POMT", "TimeUS,loop_min,loop_max,loop_time,solve_time,load,n,k", "QQQQQQHHH",
             AP_HAL::micros64(),
-            _sc->_thermal_id,
             _pomp_loop_min_time,
             _pomp_loop_max_time,
             _pomp_loop_time,

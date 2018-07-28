@@ -92,17 +92,14 @@ class SoaringController
     float _ekf_buffer[EKF_MAX_BUFFER_SIZE][3];
     unsigned _nsamples;
     unsigned _ptr = 0; // index into the _ekf_buffer
-    uint64_t _thermal_id = 0;
     float _wind_corrected_gspd = 0.01;
     float _displayed_vario_reading;
     float _aspd_filt;
-    float correct_netto_rate(int type, float climb_rate, float phi, float aspd) const;
+    float correct_netto_rate(float climb_rate, float phi, float aspd) const;
     float McCready(float alt);
     void get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
     int _msg_rate = 0;
-    float _debug_in[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    uint8_t _debug_in_mode;
     int8_t _prev_stall_prevention;
     float _dx = 0;
     float _dy = 0;
@@ -138,19 +135,14 @@ protected:
     AP_Float alt_max;
     AP_Float alt_min;
     AP_Float alt_cutoff;
-    AP_Int8 debug_mode;
     AP_Int8 pomdp_on;
-    AP_Int8 vario_type;
     AP_Float poly_a;
     AP_Float poly_b;
     AP_Float poly_c;
     AP_Int8 aspd_src;
     AP_Int8 exit_mode;
     AP_Int8 disable_soar_prevention;
-    AP_Float mccready_vspeed;
-    AP_Int8 enable_geofence;
     AP_Int8 run_timing_test;
-    AP_Int8 sg_filter;
     AP_Int8 gps_sync;
     AP_Float aspd_cmd;
     AP_Float test_dist;

@@ -181,14 +181,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_LOOP", 23, SoaringController, _pomdsoar.pomdp_loop_load, 1),
 
-    // @Param: DEBUG
-    // @DisplayName: Debug the POMDP solver
-    // @Description: Turn on POMDP solver debugging mode. WARNING: to be used on the ground only. Make sure it is set to 0 before takeoff.
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("DEBUG", 24, SoaringController, debug_mode, 0),
-
     // @Param: POMDP_ROLL1
     // @DisplayName: POMDP's maximum commanded roll angle.
     // @Description: Maximum commanded roll angle in the POMDP used by POMDSoar.
@@ -252,14 +244,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Range: -10000 10000
     // @User: Advanced
     AP_GROUPINFO("ROLL_CLP", 32, SoaringController, _pomdsoar.c_lp, -1.12808702679),
-
-    // @Param: VARIO_TYPE
-    // @DisplayName: Vario algorithm type
-    // @Description: 0=ArduSoar's, 1=Edwards with cosine bank correction, 2=Edwards with internal bank correction
-    // @Units:
-    // @Range: 0 3
-    // @User: Advanced
-    AP_GROUPINFO("VARIO_TYPE", 33, SoaringController, vario_type, 1),
 
     // @Param: POLY_A
     // @DisplayName: Sink polynomial coefficient a
@@ -542,8 +526,6 @@ void SoaringController::init_ekf()
 
 void SoaringController::init_thermalling()
 {
-    _thermal_id++; // bind logs entries to current thermal. First thermal: _thermal_id = 1
-
     get_position(_prev_update_location);
     _prev_update_time = AP_HAL::micros64();
     _thermal_start_time_us = AP_HAL::micros64();
@@ -567,16 +549,8 @@ void SoaringController::get_wind_corrected_drift(const Location *current_loc, co
     float gdy = diff.y;
     
     // Wind correction
-    if (debug_mode)
-    {
-        *wind_drift_x = _debug_in[DBG_WINDX] * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
-        *wind_drift_y = _debug_in[DBG_WINDY] * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
-    }
-    else
-    {
-        *wind_drift_x = wind->x * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
-        *wind_drift_y = wind->y * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
-    }
+    *wind_drift_x = wind->x * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
+    *wind_drift_y = wind->y * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
 
     *dx = gdx - *wind_drift_x;
     *dy = gdy - *wind_drift_y;
@@ -585,15 +559,8 @@ void SoaringController::get_wind_corrected_drift(const Location *current_loc, co
 
 void SoaringController::get_altitude_wrt_home(float *alt) const
 {
-    if (debug_mode)
-    {
-        *alt = _debug_in[DBG_ALT];
-    }
-    else
-    {
-        _ahrs.get_relative_position_D_home(*alt);
-        *alt *= -1.0f;
-    }
+    _ahrs.get_relative_position_D_home(*alt);
+    *alt *= -1.0f;
 }
 
 
@@ -626,9 +593,8 @@ void SoaringController::update_thermalling()
     if (_new_data)
     {
         // write log - save the data.
-        DataFlash_Class::instance()->Log_Write("SOAR", "TimeUS,id,nettorate,dx,dy,x0,x1,x2,x3,lat,lng,alt,dx_w,dy_w", "QQfffffffLLfff",
+        DataFlash_Class::instance()->Log_Write("SOAR", "TimeUS,nettorate,dx,dy,x0,x1,x2,x3,lat,lng,alt,dx_w,dy_w", "QfffffffLLfff",
                                                AP_HAL::micros64(),
-                                                _thermal_id,
                                                (double)_vario_reading,
                                                (double)_dx,
                                                (double)_dy,
@@ -657,18 +623,10 @@ void SoaringController::update_cruising()
 
 void SoaringController::get_heading_estimate(float *hdx, float *hdy) const
 {
-    if (debug_mode)
-    {
-        *hdx = _debug_in[DBG_GNDDX] - _debug_in[DBG_WINDX];
-        *hdy = _debug_in[DBG_GNDDY] - _debug_in[DBG_WINDY];
-    }
-    else
-    {
-        Vector2f gnd_vel = _ahrs.groundspeed_vector();
-        Vector3f wind = _ahrs.wind_estimate();
-        *hdx = gnd_vel.x - wind.x;
-        *hdy = gnd_vel.y - wind.y;
-    }
+    Vector2f gnd_vel = _ahrs.groundspeed_vector();
+    Vector3f wind = _ahrs.wind_estimate();
+    *hdx = gnd_vel.x - wind.x;
+    *hdy = gnd_vel.y - wind.y;
 }
 
 
@@ -713,13 +671,6 @@ bool SoaringController::update_vario()
             aspd_sensor = _aparm.airspeed_cruise_cm / 100.0f;
         }
 
-        if (debug_mode)
-        {
-            aspd_sensor = _debug_in[DBG_ASPD];
-            gnd_vel.x =_debug_in[DBG_GNDDX];
-            gnd_vel.y =_debug_in[DBG_GNDDY];
-        }
-
         if (fabsf(gnd_vel.x) < 100.0f && fabsf(gnd_vel.y) < 100.0f) // prevent wind ekf from getting GPS glitches
         {
             _wind_ekf.update(gnd_vel.x, gnd_vel.y, aspd_sensor);
@@ -740,16 +691,9 @@ bool SoaringController::update_vario()
         }
 
         float total_E = _alt + 0.5 *_aspd_filt * _aspd_filt / GRAVITY_MSS;   // Work out total energy
-        float sinkrate = correct_netto_rate(vario_type, 0.0f, (roll + _last_roll) / 2, _aspd_filt);   // Compute still-air sink rate
+        float sinkrate = correct_netto_rate(0.0f, (roll + _last_roll) / 2, _aspd_filt);   // Compute still-air sink rate
 
-        if (debug_mode)
-        {
-            _vario_reading = _debug_in[DBG_VARIO];
-        }
-        else
-        {
-            _vario_reading = (total_E - _last_total_E) / ((now - _prev_vario_update_time) * 1e-6) + sinkrate;    // Unfiltered netto rate
-        }
+        _vario_reading = (total_E - _last_total_E) / ((now - _prev_vario_update_time) * 1e-6) + sinkrate;    // Unfiltered netto rate
 
         if (run_timing_test == 8)
         {
@@ -795,7 +739,7 @@ bool SoaringController::update_vario()
         _new_data = true;
         _vario_updated_reset_random = true;
 
-        DataFlash_Class::instance()->Log_Write("VAR", "TimeUS,aspd_raw,aspd_filt,alt,roll,raw,filt,wx,wy,dx,dy,polar,az", "QffffffffffBf",
+        DataFlash_Class::instance()->Log_Write("VAR", "TimeUS,aspd_raw,aspd_filt,alt,roll,raw,filt,wx,wy,dx,dy,az", "Qfffffffffff",
                                                AP_HAL::micros64(),
                                                (double)aspd,
                                                (double)_aspd_filt,
@@ -807,7 +751,6 @@ bool SoaringController::update_vario()
                                                (double)wind.y,
                                                (double)_dx,
                                                (double)_dy,
-                                               (uint8_t)vario_type,
                                                (double)_ahrs.get_ins().get_accel().z);
         DataFlash_Class::instance()->Log_Write("VEKF", "TimeUS,x0,x1,x2,x3,p0,p1,p2,p3,wx0,wx1,wx2", "Qfffffffffff",
                                                AP_HAL::micros64(),
@@ -831,48 +774,29 @@ bool SoaringController::update_vario()
 }
 
 
-float SoaringController::correct_netto_rate(int type, float climb_rate, float phi, float aspd) const
+float SoaringController::correct_netto_rate(float climb_rate, float phi, float aspd) const
 {
-    if (type == 0)
-    {
-        // Remove aircraft sink rate
-        float CL0 = 0;  // CL0 = 2*W/(rho*S*V^2)
-        float C1 = 0;   // C1 = CD0/CL0
-        float C2 = 0;   // C2 = CDi0/CL0 = B*CL0
-        float netto_rate;
-        float cosphi;
-        CL0 = polar_K / (aspd * aspd);
-        C1 = polar_CD0 / CL0;  // constant describing expected angle to overcome zero-lift drag
-        C2 = polar_B * CL0;    // constant describing expected angle to overcome lift induced drag at zero bank
+    // Remove aircraft sink rate
+    float CL0 = 0;  // CL0 = 2*W/(rho*S*V^2)
+    float C1 = 0;   // C1 = CD0/CL0
+    float C2 = 0;   // C2 = CDi0/CL0 = B*CL0
+    float netto_rate;
+    float cosphi;
+    CL0 = polar_K / (aspd * aspd);
+    C1 = polar_CD0 / CL0;  // constant describing expected angle to overcome zero-lift drag
+    C2 = polar_B * CL0;    // constant describing expected angle to overcome lift induced drag at zero bank
 
-        cosphi = (1 - phi * phi / 2); // first two terms of mclaurin series for cos(phi)
-        netto_rate = climb_rate + aspd * (C1 + C2 / (cosphi * cosphi));  // effect of aircraft drag removed
-        return netto_rate;
-    }
-    else if (type == 1)
-    {
-        float netto_rate;
-        float cosphi;
-        cosphi = (1 - phi * phi / 2); // first two terms of McLaurin series for cos(phi)
-        netto_rate = climb_rate - (poly_a * aspd* aspd + poly_b * aspd + poly_c) / cosphi;
-        return netto_rate;
-    }
-    else if (type == 2)
-    {
-        float netto_rate;
-        float az = fabsf(_ahrs.get_ins().get_accel().z);
-        float n = az / GRAVITY_MSS;
-        netto_rate = climb_rate - (poly_a * aspd * aspd + poly_b * aspd + poly_c) * powf(n, 1.5);
-        return netto_rate;
-    }
-    return 0;
+    cosphi = (1 - phi * phi / 2); // first two terms of mclaurin series for cos(phi)
+    netto_rate = climb_rate + aspd * (C1 + C2 / (cosphi * cosphi));  // effect of aircraft drag removed
+    return netto_rate;
+
 }
 
 
 float SoaringController::McCready(float alt)
 {
     // A method shell to be filled in later
-    return mccready_vspeed;
+    return thermal_vspeed;
 }
 
 bool SoaringController::is_active() const
@@ -930,27 +854,13 @@ bool SoaringController::vario_updated()
 
 float SoaringController::get_roll() const
 {
-    if (debug_mode)
-    {
-        return _debug_in[DBG_ROLL];
-    }
-    else
-    {
-        return _ahrs.roll;
-    }
+    return _ahrs.roll;
 }
 
 
 float SoaringController::get_rate() const
 {
-    if (debug_mode)
-    {
-        return _debug_in[DBG_ROLL_RATE];
-    }
-    else
-    {
-        return _ahrs.get_gyro().x;
-    }
+    return _ahrs.get_gyro().x;
 }
 
 
@@ -965,11 +875,7 @@ float SoaringController::get_aspd() const
     // initialize to an obviously invalid value, which should get overwritten.
     float aspd = -100.0f;
 
-    if (debug_mode)
-    {
-        aspd = _debug_in[DBG_ASPD];
-    }
-    else if (aspd_src == 0)
+    if (aspd_src == 0)
     {
         if (!_ahrs.airspeed_estimate(&aspd))
         {
@@ -1002,14 +908,7 @@ void SoaringController::get_relative_position_wrt_home(Vector2f &vec) const
 
 float SoaringController::get_eas2tas() const
 {
-    if (debug_mode)
-    {
-        return 1.0f;
-    }
-    else
-    {
-        return _ahrs.get_EAS2TAS();
-    }
+    return _ahrs.get_EAS2TAS();
 }
 
 void SoaringController::run_tests()
