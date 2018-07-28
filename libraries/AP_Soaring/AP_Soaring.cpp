@@ -163,7 +163,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Units: none
     // @Range: 0 1
     // @User: Advanced
-    AP_GROUPINFO("SG_FILTER", 20, SoaringController, sg_filter, 1),
+    AP_GROUPINFO("SG_FILTER", 20, SoaringController, sg_filter, 0),
 
     // @Param: GPS_SYNC
     // @DisplayName: Enable synchronization between vario updates and GPS updates.
