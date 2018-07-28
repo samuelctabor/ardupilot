@@ -225,9 +225,3 @@ void Plane::soaring_policy_computation()
 {
     g2.soaring_controller.soaring_policy_computation();
 }
-
-
-void Plane::soaring_policy_computation2()
-{
-    g2.soaring_controller.soaring_policy_computation2();
-}

@@ -981,15 +981,6 @@ void SoaringController::soaring_policy_computation()
 }
 
 
-void SoaringController::soaring_policy_computation2()
-{
-    if (uses_POMDSoar())
-    {
-        _pomdsoar.update_internal_state_test();
-    }
-}
-
-
 void SoaringController::stop_computation()
 {
     _pomdsoar.stop_computations();
