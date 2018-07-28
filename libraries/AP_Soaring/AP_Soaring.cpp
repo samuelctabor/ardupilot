@@ -317,30 +317,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_NORM", 40, SoaringController, _pomdsoar.pomdp_norm_pth, 0),
 
-    // @Param: MCCREADY
-    // @DisplayName: McCready vspeed
-    // @Description: Min rate of climb to trigger themal exit
-    // @Units: m/s
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("MCCREADY", 42, SoaringController, mccready_vspeed, 0.7),
-
-    // @Param: GEOFENCE
-    // @DisplayName: Enable geofence
-    // @Description: Enable geofence. 0 = off, 1 = on
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("GEOFENCE", 43, SoaringController, enable_geofence, 0),
-
-    // @Param: DELTA_MODE
-    // @DisplayName: Enable delta actions
-    // @Description: Enable delta actions, whereby an action's roll angle is added to the UAV's current roll angle. 0 = off, 1 = on.
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("DELTA_MODE", 44, SoaringController, _pomdsoar.pomdp_delta_mode, 0),
-
     // @Param: POMDP_EXT
     // @DisplayName: Enable action duration extension in POMDSoar's max-lift mode compared to the explore mode
     // @Description: 0 = off, > 1 = multiplicative factor by which to extend action duration in max-lift compared to the explore mode.
