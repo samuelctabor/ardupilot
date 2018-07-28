@@ -94,8 +94,6 @@ class SoaringController
     float _ekf_buffer[EKF_MAX_BUFFER_SIZE][5];
     unsigned _nsamples;
     unsigned _ptr = 0; // index into the _ekf_buffer
-    bool _soaring = false;
-    bool _inhibited = false;
     uint64_t _thermal_id = 0;
     float _wind_corrected_gspd = 0.01;
     float _displayed_vario_reading;
@@ -197,9 +195,6 @@ public:
     void handle_test_in_msg(mavlink_message_t* msg);
     void get_relative_position_wrt_home(Vector2f &vec) const;
     float get_aspd() const;
-    bool soaring();
-    void set_soaring(bool state);
-    bool inhibited();
     void get_position(Location& loc);
     float get_rate() const;
     float get_roll() const;

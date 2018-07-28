@@ -474,7 +474,7 @@ bool SoaringController::suppress_throttle()
 
 bool SoaringController::check_thermal_criteria()
 {
-    return (soar_active && !_inhibited
+    return (soar_active
             && ((AP_HAL::micros64() - _cruise_start_time_us) > ((unsigned)min_cruise_s * 1e6))
             && ((sg_filter == 1 && _filtered_vario_reading > thermal_vspeed && _filtered_vario_reading_rate < 0)
             || (sg_filter == 0 && _filtered_vario_reading > thermal_vspeed))
@@ -498,23 +498,15 @@ bool SoaringController::check_cruise_criteria()
 
     _msg_rate++;
 
-    if (_inhibited)
-    {
-        gcs().send_text(MAV_SEVERITY_INFO, "Thermalling inhibited");
-        _soaring = false;
-        return true;
-    }
-    else if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(_alt))
+    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(_alt))
     {
         gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: w %f W %f R %f", (double)thermalability, (double)_ekf.X[0], (double)_ekf.X[1]);
         gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: th %f alt %f Mc %f", (double)thermalability, (double)_alt, (double)McCready(_alt));
-        _soaring = false;
         return true;
     } 
     else if (soar_active && (_alt>alt_max || _alt<alt_min))
     {
         gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise. Alt = %f\n", (double)_alt);
-        _soaring = false;
         return true;
     }
     else if (_msg_rate == 50)
@@ -584,7 +576,6 @@ void SoaringController::init_ekf()
 void SoaringController::init_thermalling()
 {
     _thermal_id++; // bind logs entries to current thermal. First thermal: _thermal_id = 1
-    _soaring = true;
 
     get_position(_prev_update_location);
     _prev_update_time = AP_HAL::micros64();
@@ -835,11 +826,6 @@ bool SoaringController::update_vario()
         else
         {
             _wind_corrected_gspd = 0.01;
-        }
-
-        if (!_soaring)
-        {
-            init_ekf();
         }
 
         // Store variables
@@ -1154,24 +1140,6 @@ float SoaringController::get_eas2tas() const
         return _ahrs.get_EAS2TAS();
     }
 }
-
-bool SoaringController::soaring()
-{
-    return _soaring;
-}
-
-
-void SoaringController::set_soaring(bool state)
-{
-    _soaring = state;
-}
-
-
-bool SoaringController::inhibited()
-{
-    return _inhibited;
-}
-
 
 void SoaringController::run_tests()
 {
