@@ -88,10 +88,6 @@ class SoaringController
     void get_wind_corrected_drift(const Location *current_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
     int _msg_rate = 0;
-    float _dx = 0;
-    float _dy = 0;
-    float _dx_w = 0;
-    float _dy_w = 0;
     Location _geofence_points[MAX_NUM_GEOFENCE_POINTS];
     int _num_geofence_points = 0;
     uint32_t _last_geofence_update_time_ms = 0;

@@ -587,14 +587,20 @@ void SoaringController::update_thermalling()
         _pomdsoar.stop_computations();
     }
 
-    if (_vario.new_data)
-    {
+    if (_vario.new_data) {
+        float dx = 0;
+        float dy = 0;
+        float dx_w = 0;
+        float dy_w = 0;
+        Vector3f wind = _ahrs.wind_estimate();
+        get_wind_corrected_drift(&current_loc, &wind, &dx_w, &dy_w, &dx, &dy);
+
         // write log - save the data.
         DataFlash_Class::instance()->Log_Write("SOAR", "TimeUS,nettorate,dx,dy,x0,x1,x2,x3,lat,lng,alt,dx_w,dy_w", "QfffffffLLfff", 
                                                AP_HAL::micros64(),
                                                (double)_vario.reading,
-                                               (double)_dx,
-                                               (double)_dy,
+                                               (double)dx,
+                                               (double)dy,
                                                (double)_ekf.X[0],
                                                (double)_ekf.X[1],
                                                (double)_ekf.X[2],
@@ -602,9 +608,9 @@ void SoaringController::update_thermalling()
                                                current_loc.lat,
                                                current_loc.lng,
                                                (double)_vario.alt,
-                                               (double)_dx_w,
-                                               (double)_dy_w);
-        _ekf.update(_vario.reading,_dx, _dy);     // update the filter
+                                               (double)dx_w,
+                                               (double)dy_w);
+        _ekf.update(_vario.reading, dx, dy);     // update the filter
         _prev_update_location = current_loc;      // save for next time
         _prev_update_time = AP_HAL::micros64();
         _vario.new_data = false;
@@ -643,7 +649,7 @@ void SoaringController::update_vario()
     struct Location current_loc;
     get_position(current_loc);
 
-     float dx = 0;
+    float dx = 0;
     float dy = 0;
     float dx_w = 0;
     float dy_w = 0;
@@ -651,8 +657,8 @@ void SoaringController::update_vario()
     get_wind_corrected_drift(&current_loc, &wind, &dx_w, &dy_w, &dx, &dy);
 
     _ekf_buffer[_ptr][0] = _vario.reading;
-    _ekf_buffer[_ptr][1] = _dx;
-    _ekf_buffer[_ptr][2] = _dy;
+    _ekf_buffer[_ptr][1] = dx;
+    _ekf_buffer[_ptr][2] = dy;
     _ptr = (_ptr + 1) % EKF_MAX_BUFFER_SIZE;
 }
 
