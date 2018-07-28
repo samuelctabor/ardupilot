@@ -89,7 +89,7 @@ class SoaringController
     bool _new_data;
     float _loiter_rad;
     bool _throttle_suppressed;
-    float _ekf_buffer[EKF_MAX_BUFFER_SIZE][5];
+    float _ekf_buffer[EKF_MAX_BUFFER_SIZE][3];
     unsigned _nsamples;
     unsigned _ptr = 0; // index into the _ekf_buffer
     uint64_t _thermal_id = 0;
@@ -98,7 +98,7 @@ class SoaringController
     float _aspd_filt;
     float correct_netto_rate(int type, float climb_rate, float phi, float aspd) const;
     float McCready(float alt);
-    void get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy, float *gdx, float *gdy);
+    void get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
     int _msg_rate = 0;
     float _debug_in[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -108,8 +108,6 @@ class SoaringController
     float _dy = 0;
     float _dx_w = 0;
     float _dy_w = 0;
-    float _gdx = 0;
-    float _gdy = 0;
     Location _geofence_points[MAX_NUM_GEOFENCE_POINTS];
     int _num_geofence_points = 0;
     uint32_t _last_geofence_update_time_ms = 0;

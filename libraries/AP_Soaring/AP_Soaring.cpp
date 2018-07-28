@@ -560,12 +560,11 @@ void SoaringController::init_cruising()
 }
 
 
-void SoaringController::get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc,  const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy,
-    float *gdx, float *gdy)
+void SoaringController::get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc,  const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy)
 {
     Vector2f diff = location_diff(*prev_loc, *current_loc); // get distances from previous update
-    *gdx = diff.x;
-    *gdy = diff.y;
+    float gdx = diff.x;
+    float gdy = diff.y;
     
     // Wind correction
     if (debug_mode)
@@ -579,8 +578,8 @@ void SoaringController::get_wind_corrected_drift(const Location *current_loc, co
         *wind_drift_y = wind->y * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
     }
 
-    *dx = *gdx - *wind_drift_x;
-    *dy = *gdy - *wind_drift_y;
+    *dx = gdx - *wind_drift_x;
+    *dy = gdy - *wind_drift_y;
 }
 
 
@@ -764,7 +763,7 @@ bool SoaringController::update_vario()
 
         _displayed_vario_reading = TE_FILT_DISPLAYED * _vario_reading + (1 - TE_FILT_DISPLAYED) * _displayed_vario_reading;
         Vector3f wind = _ahrs.wind_estimate();
-        get_wind_corrected_drift(&current_loc, &_prev_vario_update_location, &wind, &_dx_w, &_dy_w, &_dx, &_dy, &_gdx, &_gdy);
+        get_wind_corrected_drift(&current_loc, &_prev_vario_update_location, &wind, &_dx_w, &_dy_w, &_dx, &_dy);
         
         if (_dx == 0.0f && _dy == 0.0f)
         {
@@ -775,8 +774,6 @@ bool SoaringController::update_vario()
         _ekf_buffer[_ptr][0] = _vario_reading;
         _ekf_buffer[_ptr][1] = _dx;
         _ekf_buffer[_ptr][2] = _dy;
-        _ekf_buffer[_ptr][3] = _gdx;
-        _ekf_buffer[_ptr][4] = _gdy;
         _ptr = (_ptr + 1) % EKF_MAX_BUFFER_SIZE;
         
         if (dt > 0)
