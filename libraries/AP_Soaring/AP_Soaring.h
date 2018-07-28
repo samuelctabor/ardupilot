@@ -59,7 +59,7 @@ class SoaringController
     VarioSavitzkyGolayFilter _vario_sg_filter{};
     AP_AHRS &_ahrs;
     AP_SpdHgtControl &_spdHgt;
-    AP_Vehicle::FixedWing &_aparm;
+    const AP_Vehicle::FixedWing &_aparm;
     const AP_GPS &_gps;
     const float rate_hz = 5;
 
@@ -165,7 +165,7 @@ protected:
     AP_Float test_strength;
 
 public:
-    SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);
+    SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);
     
     // this supports the TECS_* user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -186,7 +186,6 @@ public:
     float get_vario_reading() { return _displayed_vario_reading; }
     bool update_vario();
     void soaring_policy_computation();
-    void soaring_policy_computation2();
     void stop_computation();
     bool POMDSoar_active();
     bool uses_POMDSoar();
@@ -198,14 +197,9 @@ public:
     void handle_test_in_msg(mavlink_message_t* msg);
     void get_relative_position_wrt_home(Vector2f &vec) const;
     float get_aspd() const;
-    void restore_stall_prevention();
     bool soaring();
     void set_soaring(bool state);
     bool inhibited();
-    void clear_geofence() { _num_geofence_points = 0; }
-    bool set_geofence_point(int i, Location& p);
-    uint32_t get_last_geofence_update_time() { return _last_geofence_update_time_ms; };
-    bool outside_geofence();
     void get_position(Location& loc);
     float get_rate() const;
     float get_roll() const;

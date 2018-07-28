@@ -13,50 +13,10 @@ void Plane::update_soaring() {
     
     g2.soaring_controller.update_vario();
     g2.soaring_controller.run_tests();
-    
-    if(mission.num_commands() > 2 && (mission.last_change_time_ms() > g2.soaring_controller.get_last_geofence_update_time() + 500 ||
-       g2.soaring_controller.get_last_geofence_update_time() == 0)) {
-        AP_Mission::Mission_Command cmd;
-        int geofence_start_index=0;
-        
-        // find the start of the geofence waypoints
-        for(int cmd_index=0; cmd_index < mission.num_commands(); cmd_index++) {
-            if(mission.read_cmd_from_storage(cmd_index, cmd)) {
-                if(cmd.id == MAV_CMD_DO_JUMP) {
-                    geofence_start_index++;
-                    break;
-                }
-            }
-            geofence_start_index++;
-        }
-        
-        int i = 0;
-        int cmd_index = geofence_start_index;
-        g2.soaring_controller.clear_geofence();
-        // copy waypoints after the first jump cmd into the geofence
-        while (cmd_index < mission.num_commands()) {
-            if(mission.read_cmd_from_storage(cmd_index, cmd)) {
-                if(cmd.id == MAV_CMD_NAV_WAYPOINT) {
-                    if (g2.soaring_controller.set_geofence_point(i,cmd.content.location))
-                        i++;
-                }
-            }
-            cmd_index++;
-        }
-        gcs().send_text(MAV_SEVERITY_INFO, "Updated %d soaring geofence points", i);
-    }
-    
-    // check the geofence
-    if ((control_mode == FLY_BY_WIRE_B || control_mode == LOITER) && g2.soaring_controller.outside_geofence()) {
-        gcs().send_text(MAV_SEVERITY_ALERT, "Outside Geofence Forcing AUTO");
-        set_mode(AUTO, MODE_REASON_UNKNOWN);
-        return;
-    }
-    
+
     if( g2.soaring_controller.soaring() &&
        !((control_mode == FLY_BY_WIRE_B && g2.soaring_controller.POMDSoar_active()) || control_mode == LOITER)) {
         g2.soaring_controller.set_soaring(false);
-        g2.soaring_controller.restore_stall_prevention();
     }
     
     // Check for throttle suppression change.

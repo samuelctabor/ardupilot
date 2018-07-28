@@ -325,14 +325,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_NORM", 40, SoaringController, _pomdsoar.pomdp_norm_pth, 0),
 
-    // @Param: NO_STALLPRV
-    // @DisplayName: No Stall Prevention
-    // @Description: 0 = stall prevention as per configuration, 1 = stall prevention off
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("NO_STALLPRV", 41, SoaringController, disable_soar_prevention, 1),
-
     // @Param: MCCREADY
     // @DisplayName: McCready vspeed
     // @Description: Min rate of climb to trigger themal exit
@@ -425,7 +417,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
 };
 
 
-SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, AP_Vehicle::FixedWing &parms, AP_RollController  &rollController, AP_Float &scaling_speed) :
+SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController  &rollController, AP_Float &scaling_speed) :
     _ahrs(ahrs),
     _spdHgt(spdHgt),
     _aparm(parms),
@@ -593,12 +585,6 @@ void SoaringController::init_thermalling()
 {
     _thermal_id++; // bind logs entries to current thermal. First thermal: _thermal_id = 1
     _soaring = true;
-    _prev_stall_prevention = _aparm.stall_prevention;
-
-    if (disable_soar_prevention)
-    {
-        _aparm.stall_prevention = 0;
-    }
 
     get_position(_prev_update_location);
     _prev_update_time = AP_HAL::micros64();
@@ -1169,13 +1155,6 @@ float SoaringController::get_eas2tas() const
     }
 }
 
-
-void SoaringController::restore_stall_prevention()
-{
-    _aparm.stall_prevention = _prev_stall_prevention;
-}
-
-
 bool SoaringController::soaring()
 {
     return _soaring;
@@ -1191,81 +1170,6 @@ void SoaringController::set_soaring(bool state)
 bool SoaringController::inhibited()
 {
     return _inhibited;
-}
-
-
-bool SoaringController::set_geofence_point(int i, Location& p)
-{
-    if (i < MAX_NUM_GEOFENCE_POINTS)
-    {
-        for(int j = 0; j < _num_geofence_points; j++)
-        {
-            if (_geofence_points[j].lat == p.lat && _geofence_points[j].lng == p.lng)
-            {
-                return false;
-            }
-        }
-
-        _geofence_points[i].lat = p.lat;
-        _geofence_points[i].lng = p.lng;
-        _last_geofence_update_time_ms = AP_HAL::millis();
-
-        if (i >= _num_geofence_points)
-        {
-            _num_geofence_points = i + 1;
-        }
-
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-
-bool SoaringController::outside_geofence()
-{
-    // This implementation assumes a convex geofence
-    if (enable_geofence == 0 || _num_geofence_points < 3)
-    {
-        return false;
-    }
-    
-    Location p;
-    get_position(p);
-    int pos = 0;
-    int neg = 0;
-    
-    for (int i = 0; i < _num_geofence_points; i++)
-    {
-        int j = (i + 1) % _num_geofence_points;
-        Vector2f diff = location_diff(p, _geofence_points[i]); // get vec from p to point i
-        float x1 = diff.y;
-        float y1 = diff.x;
-        diff = location_diff(_geofence_points[i], _geofence_points[j]); // get vec from point i to point j
-        float x2 = diff.y;
-        float y2 = diff.x;
-        float d = x1 * y2 - y1 * x2;
-
-        if (d < 0)
-        {
-            neg++;
-        }
-        else
-        {
-            pos++;
-        }
-    }
-
-    if (pos == _num_geofence_points || neg == _num_geofence_points)
-    {
-        return false;
-    } 
-    else
-    {
-        return true;
-    }
 }
 
 
