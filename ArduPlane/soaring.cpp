@@ -14,36 +14,16 @@ void Plane::update_soaring() {
     g2.soaring_controller.update_vario();
     g2.soaring_controller.run_tests();
 
-    if( g2.soaring_controller.soaring() &&
-       !((control_mode == FLY_BY_WIRE_B && g2.soaring_controller.POMDSoar_active()) || control_mode == LOITER)) {
-        g2.soaring_controller.set_soaring(false);
-    }
-    
     // Check for throttle suppression change.
     switch (control_mode){
-    case RTL:
-        g2.soaring_controller.set_throttle_suppressed(true);
-        break;
-    case GUIDED:
-        if (previous_mode == MANUAL) {
-            gcs().send_text(MAV_SEVERITY_ALERT, "Forcing MANUAL overide of GUIDED mode");
-            set_mode(MANUAL, MODE_REASON_UNKNOWN);
-            return;
-        }
-        else if (previous_mode == FLY_BY_WIRE_A) {
-            gcs().send_text(MAV_SEVERITY_ALERT, "Forcing FBWA overide of GUIDED mode");
-            set_mode(FLY_BY_WIRE_A, MODE_REASON_UNKNOWN);
-            return;
-        }
     case AUTO:
         g2.soaring_controller.suppress_throttle();
-        g2.soaring_controller.stop_computation();
         break;
     case FLY_BY_WIRE_B:
     case CRUISE:
         if (!g2.soaring_controller.suppress_throttle()) {
-            gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise.");
-            set_mode(AUTO, MODE_REASON_SOARING_FBW_B_WITH_MOTOR_RUNNING);
+            gcs().send_text(MAV_SEVERITY_INFO, "Out of allowable altitude range, exiting soaring.");
+            set_mode(RTL, MODE_REASON_SOARING_FBW_B_WITH_MOTOR_RUNNING);
         }
         break;
     case LOITER:
@@ -61,72 +41,17 @@ void Plane::update_soaring() {
         return;
     }
 
-    switch (control_mode) {
+    switch (control_mode){
     case AUTO:
+        g2.soaring_controller.stop_computation();
     case FLY_BY_WIRE_B:
     case CRUISE:
-    case GUIDED:
         // Test for switch into thermalling mode
         g2.soaring_controller.update_cruising();
-        if (g2.soaring_controller.POMDSoar_active()) {
-            g2.soaring_controller.update_thermalling();
-            g2.soaring_controller.get_target(next_WP_loc);
 
-            if (!g2.soaring_controller.POMDSoar_active()) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDSoar completed");
-
-                if (g2.soaring_controller.is_set_to_continue_past_thermal_locking_period()) {
-                    switch (previous_mode) {
-                        case FLY_BY_WIRE_B:
-                            gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDSoar ended, entering AUTO");
-                            // AUTO is our default autonomous-operation mode
-                            set_mode(AUTO, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
-                            break;
-                        case CRUISE: {
-                            // return to cruise with old ground course
-                            CruiseState cruise = cruise_state;
-                            gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDSoar ended, restoring CRUISE");
-                            set_mode(CRUISE, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
-                            cruise_state = cruise;
-                            set_target_altitude_current();
-                            break;
-                        }
-                        case AUTO:
-                            gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDSoar ended, restoring AUTO");
-                            set_mode(AUTO, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
-                            break;
-                        case GUIDED:
-                            gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDSoar ended, restoring GUIDED");
-                            set_mode(GUIDED, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                else {
-                    enum FlightMode temp_mode = previous_mode;
-                    gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Entering Loiter");
-                    set_mode(LOITER, MODE_REASON_SOARING_THERMAL_DETECTED);
-                    previous_mode = temp_mode; // restore back to original mode, not FBWB of POMDSoar phase
-                }
-            }
-        }
-        else if (g2.soaring_controller.check_thermal_criteria()) {
-            gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal detected");
-            if (g2.soaring_controller.uses_POMDSoar()) {
-                // Start POMDSoar
-                gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDSoar started");
-                g2.soaring_controller.init_thermalling();
-                g2.soaring_controller.get_target(next_WP_loc);
-                set_mode(FLY_BY_WIRE_B, MODE_REASON_SOARING_THERMAL_DETECTED);
-            }
-            else {
-                // Start ArduSoar
-                g2.soaring_controller.init_thermalling();
-                g2.soaring_controller.get_target(next_WP_loc);
-                gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Entering Loiter");
-                set_mode(LOITER, MODE_REASON_SOARING_THERMAL_DETECTED);
-            }
+        if (g2.soaring_controller.check_thermal_criteria()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal detected, entering loiter");
+            set_mode(LOITER, MODE_REASON_SOARING_THERMAL_DETECTED);
         }
         break;
 
@@ -140,9 +65,8 @@ void Plane::update_soaring() {
             // Exit as soon as thermal state estimate deteriorates
             switch (previous_mode) {
             case FLY_BY_WIRE_B:
-                gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal ended, entering AUTO");
-                // AUTO is our default autonomous-operation mode
-                set_mode(AUTO, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
+                gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal ended, entering RTL");
+                set_mode(RTL, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
                 break;
 
             case CRUISE: {
@@ -154,14 +78,10 @@ void Plane::update_soaring() {
                 set_target_altitude_current();
                 break;
             }
+
             case AUTO:
                 gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal ended, restoring AUTO");
                 set_mode(AUTO, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
-                break;
-                
-            case GUIDED:
-                gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal ended, restoring GUIDED");
-                set_mode(GUIDED, MODE_REASON_SOARING_THERMAL_ESTIMATE_DETERIORATED);
                 break;
 
             default:
