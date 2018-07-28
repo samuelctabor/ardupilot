@@ -157,14 +157,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_HORI", 19, SoaringController, _pomdsoar.pomdp_hori, 4.0),
 
-    // @Param: SG_FILTER
-    // @DisplayName: use Savitzky Golay vario filter
-    // @Description: 0 = 1st order filter (don't use the SG filter), 1 = SG filter
-    // @Units: none
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("SG_FILTER", 20, SoaringController, sg_filter, 0),
-
     // @Param: GPS_SYNC
     // @DisplayName: Enable synchronization between vario updates and GPS updates.
     // @Description: Enable synchronization between vario updates and GPS updates. 0 = off, 1 = sync vario update with GPS update.
@@ -476,8 +468,7 @@ bool SoaringController::check_thermal_criteria()
 {
     return (soar_active
             && ((AP_HAL::micros64() - _cruise_start_time_us) > ((unsigned)min_cruise_s * 1e6))
-            && ((sg_filter == 1 && _filtered_vario_reading > thermal_vspeed && _filtered_vario_reading_rate < 0)
-            || (sg_filter == 0 && _filtered_vario_reading > thermal_vspeed))
+            && _filtered_vario_reading > thermal_vspeed
             && _alt < alt_max
             && _alt > alt_min);
 }
@@ -793,14 +784,7 @@ bool SoaringController::update_vario()
             _vario_reading += thml_w;
         }
 
-        if (sg_filter == 1)
-        {
-            _vario_sg_filter.prediction(dt, (const float **)_ekf_buffer, EKF_MAX_BUFFER_SIZE, _ptr, &_filtered_vario_reading, &_filtered_vario_reading_rate);
-        }
-        else
-        {
-            _filtered_vario_reading = TE_FILT * _vario_reading + (1 - TE_FILT) * _filtered_vario_reading;  // Apply low pass timeconst filter for noise
-        }
+        _filtered_vario_reading = TE_FILT * _vario_reading + (1 - TE_FILT) * _filtered_vario_reading;  // Apply low pass timeconst filter for noise
 
         _displayed_vario_reading = TE_FILT_DISPLAYED * _vario_reading + (1 - TE_FILT_DISPLAYED) * _displayed_vario_reading;
         Vector3f wind = _ahrs.wind_estimate();
