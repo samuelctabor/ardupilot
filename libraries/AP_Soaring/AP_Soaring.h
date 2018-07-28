@@ -18,7 +18,6 @@
 #include "ExtendedKalmanFilter.h"
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
 #include "WindExtendedKalmanFilter.h"
-#include "VarioSavitzkyGolayFilter.h"
 #include "Variometer.h"
 #include "POMDSoar.h"
 
@@ -56,7 +55,6 @@ class SoaringController
 
     ExtendedKalmanFilter _ekf{};
     WindExtendedKalmanFilter _wind_ekf{};
-    VarioSavitzkyGolayFilter _vario_sg_filter{};
     AP_AHRS &_ahrs;
     AP_SpdHgtControl &_spdHgt;
     const AP_Vehicle::FixedWing &_aparm;
