@@ -373,11 +373,11 @@ SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, co
     _ahrs(ahrs),
     _spdHgt(spdHgt),
     _aparm(parms),
-    _gps(ahrs.get_gps()),
-    _new_data(false),
+    _vario(ahrs, spdHgt,parms),
     _loiter_rad(parms.loiter_radius),
     _throttle_suppressed(true),
-    _prev_stall_prevention(parms.stall_prevention),
+    _gps(ahrs.get_gps()),
+    _new_data(false),
     _pomdsoar(this, rollController, scaling_speed),
     _prev_run_timing_test(0)
 {
@@ -418,7 +418,7 @@ bool SoaringController::suppress_throttle()
         _cruise_start_time_us = AP_HAL::micros64();
         // Reset the filtered vario rate - it is currently elevated due to the climb rate and would otherwise take a while to fall again,
         // leading to false positives.
-        _filtered_vario_reading = 0;
+        _vario.filtered_reading = 0;
     }
 
     return _throttle_suppressed;
@@ -428,7 +428,7 @@ bool SoaringController::check_thermal_criteria()
 {
     return (soar_active
             && ((AP_HAL::micros64() - _cruise_start_time_us) > ((unsigned)min_cruise_s * 1e6))
-            && _filtered_vario_reading > thermal_vspeed
+            && _vario.filtered_reading > thermal_vspeed
             && _alt < alt_max
             && _alt > alt_min);
 }
@@ -595,7 +595,7 @@ void SoaringController::update_thermalling()
         // write log - save the data.
         DataFlash_Class::instance()->Log_Write("SOAR", "TimeUS,nettorate,dx,dy,x0,x1,x2,x3,lat,lng,alt,dx_w,dy_w", "QfffffffLLfff",
                                                AP_HAL::micros64(),
-                                               (double)_vario_reading,
+                                               (double)_vario.reading,
                                                (double)_dx,
                                                (double)_dy,
                                                (double)_ekf.X[0],
@@ -607,7 +607,7 @@ void SoaringController::update_thermalling()
                                                (double)_alt,
                                                (double)_dx_w,
                                                (double)_dy_w);
-        _ekf.update(_vario_reading,_dx, _dy); // update the filter
+        _ekf.update(_vario.reading,_dx, _dy); // update the filter
         _prev_update_location = current_loc; // save for next time
         _prev_update_time = AP_HAL::micros64();
         _new_data = false;

@@ -58,6 +58,7 @@ class SoaringController
     AP_AHRS &_ahrs;
     AP_SpdHgtControl &_spdHgt;
     const AP_Vehicle::FixedWing &_aparm;
+    Variometer _vario;
     const AP_GPS &_gps;
     const float rate_hz = 5;
 
@@ -100,7 +101,6 @@ class SoaringController
     void get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
     int _msg_rate = 0;
-    int8_t _prev_stall_prevention;
     float _dx = 0;
     float _dy = 0;
     float _dx_w = 0;
