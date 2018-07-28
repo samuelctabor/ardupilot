@@ -1115,16 +1115,16 @@ float SoaringController::get_rate() const
 
 void SoaringController::get_position(Location& loc)
 {
-    if (debug_mode)
-    {
-        loc.lat = *((int32_t *)(&_debug_in[DBG_LAT]));
-        loc.lng = *((int32_t *)(&_debug_in[DBG_LNG]));
-        loc.alt = (int32_t)(round(_debug_in[DBG_ALT] * 100));
-    }
-    else
-    {
+    // if (debug_mode)
+    // {
+    //     loc.lat = *((int32_t *)(&_debug_in[DBG_LAT]));
+    //     loc.lng = *((int32_t *)(&_debug_in[DBG_LNG]));
+    //     loc.alt = (int32_t)(round(_debug_in[DBG_ALT] * 100));
+    // }
+    // else
+    // {
         _ahrs.get_position(loc);
-    }
+    // }
 }
 
 
