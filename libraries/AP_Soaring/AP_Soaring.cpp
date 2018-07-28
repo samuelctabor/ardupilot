@@ -835,9 +835,6 @@ bool SoaringController::update_vario()
             _dy = 1e-6f;
         }
 
-        //gcs().send_text(MAV_SEVERITY_INFO, "old lat %d lng %d", _prev_vario_update_location.lat,_prev_vario_update_location.lng);
-        //gcs().send_text(MAV_SEVERITY_INFO, "new lat %d lng %d", current_loc.lat,current_loc.lng);
-        //gcs().send_text(MAV_SEVERITY_INFO, "dx %f dy %f dt %f", _dx * 1000, _dy * 1000, _mavlink_dt * 1e-6);
         _ekf_buffer[_ptr][0] = _vario_reading;
         _ekf_buffer[_ptr][1] = _dx;
         _ekf_buffer[_ptr][2] = _dy;
@@ -1024,60 +1021,61 @@ void SoaringController::handle_test_in_msg(mavlink_message_t* msg)
     uint64_t now = AP_HAL::micros64();
     _mavlink_dt = now - _prev_mav_test_msg_us;
     _prev_mav_test_msg_us = now;
-    _debug_in_mode = mavlink_msg_soar_test_in_get_mode(msg);
-    mavlink_msg_soar_test_in_get_data(msg, _debug_in);
+    // _debug_in_mode = mavlink_msg_soar_test_in_get_mode(msg);
+    // mavlink_msg_soar_test_in_get_data(msg, _debug_in);
 }
 
 
 void SoaringController::handle_control_msg(mavlink_message_t* msg)
 {
-    mavlink_soar_control_t packet;
-    mavlink_msg_soar_control_decode(msg, &packet);
-    _inhibited = packet.inhibit;
+    // mavlink_soar_control_t packet;
+    // mavlink_msg_soar_control_decode(msg, &packet);
+    // _inhibited = packet.inhibit;
 }
 
 
 void SoaringController::send_status_msg(mavlink_channel_t chan)
 {
-    float X[4] = { _ekf.X[0], _ekf.X[1], _ekf.X[2], _ekf.X[3] };
-    float P[16] = {
-    _ekf.P(0, 0), _ekf.P(0,1), _ekf.P(0,2), _ekf.P(0,3),
-    _ekf.P(1,0), _ekf.P(1, 1), _ekf.P(1,2), _ekf.P(1,3),
-    _ekf.P(2,0), _ekf.P(2,1), _ekf.P(2, 2), _ekf.P(2,3),
-    _ekf.P(3,0), _ekf.P(3,1), _ekf.P(3,2), _ekf.P(3, 3) };
-    uint8_t soaring_state = 0;
+    // float X[4] = { _ekf.X[0], _ekf.X[1], _ekf.X[2], _ekf.X[3] };
+    // float P[16] = {
+    // _ekf.P(0, 0), _ekf.P(0,1), _ekf.P(0,2), _ekf.P(0,3),
+    // _ekf.P(1,0), _ekf.P(1, 1), _ekf.P(1,2), _ekf.P(1,3),
+    // _ekf.P(2,0), _ekf.P(2,1), _ekf.P(2, 2), _ekf.P(2,3),
+    // _ekf.P(3,0), _ekf.P(3,1), _ekf.P(3,2), _ekf.P(3, 3) };
+    // uint8_t soaring_state = 0;
 
-    if(_throttle_suppressed)
-    {
-        if (_soaring)
-        {
-            soaring_state = 2;
-        }
-        else if (_filtered_vario_reading > thermal_vspeed)
-        {
-            soaring_state = 1;
-        }
-    }
+    // if(_throttle_suppressed)
+    // {
+    //     if (_soaring)
+    //     {
+    //         soaring_state = 2;
+    //     }
+    //     else if (_filtered_vario_reading > thermal_vspeed)
+    //     {
+    //         soaring_state = 1;
+    //     }
+    // }
 
-    uint8_t pomdp_mode = 0;
+    // uint8_t pomdp_mode = 0;
 
-    if (_pomdsoar.are_computations_in_progress())
-    {
-        pomdp_mode = 1 + _pomdsoar.get_curr_mode();
-    }
+    // if (_pomdsoar.are_computations_in_progress())
+    // {
+    //     pomdp_mode = 1 + _pomdsoar.get_curr_mode();
+    // }
 
-    mavlink_msg_soar_status_send(
-        chan,
-        AP_HAL::micros64(), //<field type="uint64_t" name="time_usec">Timestamp (micros since boot or Unix epoch)</field>
-        (uint8_t)soaring_state, //<field name="soaring" type="uint8_t">soaring state: 0 = searching 1 = detected 2 = soaring</field>
-        (uint8_t)_inhibited, //<field name="inhibited" type="uint8_t">soaring inhibited=1 uninhibited=0</field>
-        pomdp_mode, //<field name="pomdp_mode" type="uint8_t">pomdp mode: 0 = inactive 1 = explore 2 = max_lift </field>
-        _pomdsoar.get_latest_pomdp_solve_time(), //<field name="pomdp_solve_time" type="uint64_t">POMDP solve time</field>
-        X, //<field name="X" type="float[4]">Thermal state</field>
-        P, //<field name="P" type="float[16]">EKF P matrix diagonal</field>
-        _vario_reading, //<field name="vario" type="float">Netto vario signal</field>
-        _filtered_vario_reading //<field name="vario_filt" type="float">Filtered netto vario signal</field>
-        ); 
+
+    // mavlink_msg_soar_status_send(
+    //     chan,
+    //     AP_HAL::micros64(), //<field type="uint64_t" name="time_usec">Timestamp (micros since boot or Unix epoch)</field>
+    //     (uint8_t)soaring_state, //<field name="soaring" type="uint8_t">soaring state: 0 = searching 1 = detected 2 = soaring</field>
+    //     (uint8_t)_inhibited, //<field name="inhibited" type="uint8_t">soaring inhibited=1 uninhibited=0</field>
+    //     pomdp_mode, //<field name="pomdp_mode" type="uint8_t">pomdp mode: 0 = inactive 1 = explore 2 = max_lift </field>
+    //     _pomdsoar.get_latest_pomdp_solve_time(), //<field name="pomdp_solve_time" type="uint64_t">POMDP solve time</field>
+    //     X, //<field name="X" type="float[4]">Thermal state</field>
+    //     P, //<field name="P" type="float[16]">EKF P matrix diagonal</field>
+    //     _vario_reading, //<field name="vario" type="float">Netto vario signal</field>
+    //     _filtered_vario_reading //<field name="vario_filt" type="float">Filtered netto vario signal</field>
+    //     ); 
 }
 
 
