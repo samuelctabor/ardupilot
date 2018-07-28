@@ -184,7 +184,6 @@ public:
     void soaring_policy_computation();
     void stop_computation();
     bool POMDSoar_active();
-    bool uses_POMDSoar();
     bool vario_updated();
     float get_roll_cmd();
     void send_test_out_msg(mavlink_channel_t chan);
