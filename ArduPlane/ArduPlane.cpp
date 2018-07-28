@@ -76,6 +76,24 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_logging1,        25,    300),
     SCHED_TASK(update_logging2,        25,    300),
     SCHED_TASK(update_soaring,         50,    400),
+    /* Break up the soaring POMDP calculation into
+    several small time slices to avoid starving
+    other vital processes. */
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
+    SCHED_TASK(soaring_policy_computation,          50,    1000),
     SCHED_TASK(parachute_check,        10,    200),
     SCHED_TASK(terrain_update,         10,    200),
     SCHED_TASK(update_is_flying_5Hz,    5,    100),
@@ -704,6 +722,10 @@ void Plane::update_flight_mode(void)
     case FLY_BY_WIRE_B:
         // Thanks to Yury MonZon for the altitude limit code!
         nav_roll_cd = channel_roll->norm_input() * roll_limit_cd;
+        // for soaring_controler POMDP steering
+        if (g2.soaring_controller.POMDSoar_active()) {
+            nav_roll_cd = g2.soaring_controller.get_roll_cmd();
+        }
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
         update_load_factor();
         update_fbwb_speed_height();

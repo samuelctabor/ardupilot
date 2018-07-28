@@ -264,6 +264,16 @@ void Plane::send_vfr_hud(mavlink_channel_t chan)
         (g2.soaring_controller.is_active() ? g2.soaring_controller.get_vario_reading() : barometer.get_climb_rate()));
 }
 
+// Send status mavlink message from the Soaring Controller
+void Plane::send_soar_status(mavlink_channel_t chan) {
+    g2.soaring_controller.send_status_msg(chan);
+}
+
+// Send test mavlink message from the Soaring Controller
+void Plane::send_soar_test_out(mavlink_channel_t chan) {
+	g2.soaring_controller.send_test_out_msg(chan);
+}
+
 /*
   keep last HIL_STATE message to allow sending SIM_STATE
  */
@@ -691,6 +701,14 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
         CHECK_PAYLOAD_SIZE(AOA_SSA);
         plane.send_aoa_ssa(chan);
         break;
+    case MSG_SOAR_STATUS:
+        CHECK_PAYLOAD_SIZE(SOAR_STATUS);
+        plane.send_soar_status(chan);
+        break;
+    case MSG_SOAR_TEST_OUT:
+        CHECK_PAYLOAD_SIZE(SOAR_TEST_OUT);
+        plane.send_soar_test_out(chan);
+        break;
     case MSG_LANDING:
         plane.landing.send_landing_message(chan);
         break;
@@ -884,6 +902,8 @@ GCS_MAVLINK_Plane::data_stream_send(void)
     if (plane.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_EXTRA2)) {
+        send_message(MSG_SOAR_STATUS);
+        send_message(MSG_SOAR_TEST_OUT);
         send_message(MSG_VFR_HUD);
     }
 
@@ -1925,6 +1945,12 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
 
         break;
     }
+    case MAVLINK_MSG_ID_SOAR_TEST_IN:
+        plane.g2.soaring_controller.handle_test_in_msg(msg);
+        break;
+    case MAVLINK_MSG_ID_SOAR_CONTROL:
+        plane.g2.soaring_controller.handle_control_msg(msg);
+        break;
 
     case MAVLINK_MSG_ID_ADSB_VEHICLE:
     case MAVLINK_MSG_ID_UAVIONIX_ADSB_OUT_CFG:

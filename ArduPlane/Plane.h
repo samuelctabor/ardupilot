@@ -820,6 +820,8 @@ private:
     void send_current_waypoint(mavlink_channel_t chan);
 
     void send_aoa_ssa(mavlink_channel_t chan);
+    void send_soar_status(mavlink_channel_t chan);
+    void send_soar_test_out(mavlink_channel_t chan);
 
     void gcs_data_stream_send(void);
     void gcs_update(void);
@@ -1105,6 +1107,8 @@ private:
     void accel_cal_update(void);
     void update_soft_armed();
     void update_soaring();
+    void soaring_policy_computation();
+    void soaring_policy_computation2();
 
     // support for AP_Avoidance custom flight mode, AVOID_ADSB
     bool avoid_adsb_init(bool ignore_checks);
