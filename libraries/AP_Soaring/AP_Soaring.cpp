@@ -373,17 +373,15 @@ SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, co
     _ahrs(ahrs),
     _spdHgt(spdHgt),
     _aparm(parms),
-    _vario(ahrs, spdHgt,parms),
+    _vario(ahrs,spdHgt,parms),
     _loiter_rad(parms.loiter_radius),
     _throttle_suppressed(true),
     _gps(ahrs.get_gps()),
-    _new_data(false),
     _pomdsoar(this, rollController, scaling_speed),
     _prev_run_timing_test(0)
 {
     AP_Param::setup_object_defaults(this, var_info);
     _prev_update_time = AP_HAL::micros64();
-    _prev_vario_update_time = AP_HAL::micros64();
     VectorN<float, 3> X = (const float[]) { 0, 0, 0 };
     MatrixN<float, 3> P = (const float[]) { 0.5, 0.5, 0.5 };
     MatrixN<float, 3> Q = (const float[]) { 0.0001, 0.001, 0.001 };
@@ -429,13 +427,14 @@ bool SoaringController::check_thermal_criteria()
     return (soar_active
             && ((AP_HAL::micros64() - _cruise_start_time_us) > ((unsigned)min_cruise_s * 1e6))
             && _vario.filtered_reading > thermal_vspeed
-            && _alt < alt_max
-            && _alt > alt_min);
+            && _vario.alt < alt_max
+            && _vario.alt > alt_min);
 }
 
 bool SoaringController::check_cruise_criteria()
 {
     float thermalability = -1e6;
+    float alt = _vario.alt;
 
     if (pomdp_on && (exit_mode == 1 || exit_mode == 2))
     {
@@ -449,15 +448,15 @@ bool SoaringController::check_cruise_criteria()
 
     _msg_rate++;
 
-    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(_alt))
+    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt))
     {
         gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: w %f W %f R %f", (double)thermalability, (double)_ekf.X[0], (double)_ekf.X[1]);
-        gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: th %f alt %f Mc %f", (double)thermalability, (double)_alt, (double)McCready(_alt));
+        gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: th %f alt %f Mc %f", (double)thermalability, (double)alt, (double)McCready(alt));
         return true;
     } 
-    else if (soar_active && (_alt>alt_max || _alt<alt_min))
+    else if (soar_active && (alt>alt_max || alt<alt_min))
     {
-        gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise. Alt = %f\n", (double)_alt);
+        gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise. Alt = %f\n", (double)alt);
         return true;
     }
     else if (_msg_rate == 50)
@@ -541,19 +540,17 @@ void SoaringController::init_cruising()
     }
 }
 
-
-void SoaringController::get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc,  const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy)
+void SoaringController::get_wind_corrected_drift(const Location *current_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy)
 {
-    Vector2f diff = location_diff(*prev_loc, *current_loc); // get distances from previous update
-    float gdx = diff.x;
-    float gdy = diff.y;
-    
-    // Wind correction
-    *wind_drift_x = wind->x * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
-    *wind_drift_y = wind->y * (AP_HAL::micros64() - _prev_vario_update_time) * 1e-6;
+    Vector2f diff = location_diff(_prev_update_location, *current_loc); // get distances from previous update
+    *dx = diff.x;
+    *dy = diff.y;
 
-    *dx = gdx - *wind_drift_x;
-    *dy = gdy - *wind_drift_y;
+    // Wind correction
+    *wind_drift_x = wind->x * (AP_HAL::micros64() - _prev_update_time) * 1e-6;
+    *wind_drift_y = wind->y * (AP_HAL::micros64() - _prev_update_time) * 1e-6;
+    *dx -= *wind_drift_x;
+    *dy -= *wind_drift_y;
 }
 
 
@@ -590,10 +587,10 @@ void SoaringController::update_thermalling()
         _pomdsoar.stop_computations();
     }
 
-    if (_new_data)
+    if (_vario.new_data)
     {
         // write log - save the data.
-        DataFlash_Class::instance()->Log_Write("SOAR", "TimeUS,nettorate,dx,dy,x0,x1,x2,x3,lat,lng,alt,dx_w,dy_w", "QfffffffLLfff",
+        DataFlash_Class::instance()->Log_Write("SOAR", "TimeUS,nettorate,dx,dy,x0,x1,x2,x3,lat,lng,alt,dx_w,dy_w", "QfffffffLLfff", 
                                                AP_HAL::micros64(),
                                                (double)_vario.reading,
                                                (double)_dx,
@@ -604,13 +601,13 @@ void SoaringController::update_thermalling()
                                                (double)_ekf.X[3],
                                                current_loc.lat,
                                                current_loc.lng,
-                                               (double)_alt,
+                                               (double)_vario.alt,
                                                (double)_dx_w,
                                                (double)_dy_w);
-        _ekf.update(_vario.reading,_dx, _dy); // update the filter
-        _prev_update_location = current_loc; // save for next time
+        _ekf.update(_vario.reading,_dx, _dy);     // update the filter
+        _prev_update_location = current_loc;      // save for next time
         _prev_update_time = AP_HAL::micros64();
-        _new_data = false;
+        _vario.new_data = false;
     }
 }
 
@@ -638,160 +635,32 @@ void SoaringController::get_velocity_estimate(float dt, float *v0) const
 }
 
 
-bool SoaringController::update_vario()
+void SoaringController::update_vario()
 {
-    uint64_t now = AP_HAL::micros64();
-    const uint32_t vario_rate_dt_ms = (1.0f / rate_hz) * 1e3;
-    const uint32_t sched_rate_dt_ms = (1.0f / 50.0f) * 1e3;
-    const uint32_t dropout_delay_ms = 1000;
-    const uint32_t sched_jitter_ms = sched_rate_dt_ms * 3;
-    uint32_t time_since_last_gps_fix_ms = now * 1e-3 - _ahrs.get_gps().last_fix_time_ms();
-    uint32_t time_since_last_vario_update_ms = (now - _prev_vario_update_time) * 1e-3;
-    bool gps_drop_out = time_since_last_gps_fix_ms > dropout_delay_ms;
+    _vario.update(polar_K, polar_CD0, polar_B);
 
-    if ( (gps_sync > 0 && !gps_drop_out && ((time_since_last_vario_update_ms > vario_rate_dt_ms - sched_jitter_ms && time_since_last_gps_fix_ms < sched_jitter_ms)
-        || time_since_last_vario_update_ms > vario_rate_dt_ms + sched_jitter_ms))
-        || (now - _prev_vario_update_time) > (1.0f / rate_hz) * 1e6)
-    {
-        float dt = (now - _prev_vario_update_time) * 1e-6;
-        //gcs().send_text(MAV_SEVERITY_INFO, "var: %f %u v0: %f  fix: %ums", dt, _update_rate_ms, _wind_corrected_gspd, AP_HAL::millis() - _ahrs.get_gps().last_fix_time_ms());
-        _vario_updated = true;
-        Location current_loc;
-        get_position(current_loc);
-        get_altitude_wrt_home(&_alt);
+    // Fill EKF buffer for eventual action on thermal trigger.
+    struct Location current_loc;
+    get_position(current_loc);
 
-        // Both filtered total energy rates and unfiltered are computed for the thermal switching logic and the EKF
-        float aspd = 0;
-        float roll = get_roll();
-        Vector2f gnd_vel = _ahrs.groundspeed_vector();
-        float aspd_sensor = 0;
+     float dx = 0;
+    float dy = 0;
+    float dx_w = 0;
+    float dy_w = 0;
+    Vector3f wind = _ahrs.wind_estimate();
+    get_wind_corrected_drift(&current_loc, &wind, &dx_w, &dy_w, &dx, &dy);
 
-        if (!_ahrs.airspeed_estimate(&aspd_sensor))
-        {
-            aspd_sensor = _aparm.airspeed_cruise_cm / 100.0f;
-        }
-
-        if (fabsf(gnd_vel.x) < 100.0f && fabsf(gnd_vel.y) < 100.0f) // prevent wind ekf from getting GPS glitches
-        {
-            _wind_ekf.update(gnd_vel.x, gnd_vel.y, aspd_sensor);
-        }
-        //gcs().send_text(MAV_SEVERITY_INFO, "Wind EKF in : %f %f %f",diff.x, diff.y, aspd_sensor);
-        //gcs().send_text(MAV_SEVERITY_INFO, "Wind EKF out: %f %f %f",_wind_ekf.X[0],_wind_ekf.X[1],_wind_ekf.X[2]);
-        aspd = get_aspd();
-        
-        if (aspd_src == 2)
-        {
-            float tau = 2;
-            float aspd_dot = (aspd - _aspd_filt) / tau;
-            _aspd_filt += aspd_dot * dt;
-        }
-        else
-        {
-            _aspd_filt = ASPD_FILT * aspd + (1 - ASPD_FILT) * _aspd_filt;
-        }
-
-        float total_E = _alt + 0.5 *_aspd_filt * _aspd_filt / GRAVITY_MSS;   // Work out total energy
-        float sinkrate = correct_netto_rate(0.0f, (roll + _last_roll) / 2, _aspd_filt);   // Compute still-air sink rate
-
-        _vario_reading = (total_E - _last_total_E) / ((now - _prev_vario_update_time) * 1e-6) + sinkrate;    // Unfiltered netto rate
-
-        if (run_timing_test == 8)
-        {
-            Vector2f thml_offset = location_diff(_test_thml_loc, current_loc);
-            float dist_sqr = thml_offset.x * thml_offset.x + thml_offset.y * thml_offset.y;
-            float thml_w = _test_thml_w * expf(-dist_sqr / powf(_test_thml_r, 2));
-            _vario_reading += thml_w;
-        }
-
-        _filtered_vario_reading = TE_FILT * _vario_reading + (1 - TE_FILT) * _filtered_vario_reading;  // Apply low pass timeconst filter for noise
-
-        _displayed_vario_reading = TE_FILT_DISPLAYED * _vario_reading + (1 - TE_FILT_DISPLAYED) * _displayed_vario_reading;
-        Vector3f wind = _ahrs.wind_estimate();
-        get_wind_corrected_drift(&current_loc, &_prev_vario_update_location, &wind, &_dx_w, &_dy_w, &_dx, &_dy);
-        
-        if (_dx == 0.0f && _dy == 0.0f)
-        {
-            _dx = 1e-6f;
-            _dy = 1e-6f;
-        }
-
-        _ekf_buffer[_ptr][0] = _vario_reading;
-        _ekf_buffer[_ptr][1] = _dx;
-        _ekf_buffer[_ptr][2] = _dy;
-        _ptr = (_ptr + 1) % EKF_MAX_BUFFER_SIZE;
-        
-        if (dt > 0)
-        {
-            get_velocity_estimate(dt, &_wind_corrected_gspd);
-        }
-        else
-        {
-            _wind_corrected_gspd = 0.01;
-        }
-
-        // Store variables
-        _last_alt = _alt;
-        _last_roll = roll;
-        _last_aspd = aspd;
-        _last_total_E = total_E;
-        _prev_vario_update_time = now;
-        _prev_vario_update_location = current_loc;
-        _new_data = true;
-        _vario_updated_reset_random = true;
-
-        DataFlash_Class::instance()->Log_Write("VAR", "TimeUS,aspd_raw,aspd_filt,alt,roll,raw,filt,wx,wy,dx,dy,az", "Qfffffffffff",
-                                               AP_HAL::micros64(),
-                                               (double)aspd,
-                                               (double)_aspd_filt,
-                                               (double)_alt,
-                                               (double)roll,
-                                               (double)_vario_reading,
-                                               (double)_filtered_vario_reading,
-                                               (double)wind.x,
-                                               (double)wind.y,
-                                               (double)_dx,
-                                               (double)_dy,
-                                               (double)_ahrs.get_ins().get_accel().z);
-        DataFlash_Class::instance()->Log_Write("VEKF", "TimeUS,x0,x1,x2,x3,p0,p1,p2,p3,wx0,wx1,wx2", "Qfffffffffff",
-                                               AP_HAL::micros64(),
-                                               (double)_ekf.X[0],
-                                               (double)_ekf.X[1],
-                                               (double)_ekf.X[2],
-                                               (double)_ekf.X[3],
-                                               (double)_ekf.P(0, 0),
-                                               (double)_ekf.P(1, 1),
-                                               (double)_ekf.P(2, 2),
-                                               (double)_ekf.P(3, 3),
-                                               (double)_wind_ekf.X[0],
-                                               (double)_wind_ekf.X[1], 
-                                               (double)_wind_ekf.X[2]);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    _ekf_buffer[_ptr][0] = _vario.reading;
+    _ekf_buffer[_ptr][1] = _dx;
+    _ekf_buffer[_ptr][2] = _dy;
+    _ptr = (_ptr + 1) % EKF_MAX_BUFFER_SIZE;
 }
 
 
 float SoaringController::correct_netto_rate(float climb_rate, float phi, float aspd) const
 {
-    // Remove aircraft sink rate
-    float CL0 = 0;  // CL0 = 2*W/(rho*S*V^2)
-    float C1 = 0;   // C1 = CD0/CL0
-    float C2 = 0;   // C2 = CDi0/CL0 = B*CL0
-    float netto_rate;
-    float cosphi;
-    CL0 = polar_K / (aspd * aspd);
-    C1 = polar_CD0 / CL0;  // constant describing expected angle to overcome zero-lift drag
-    C2 = polar_B * CL0;    // constant describing expected angle to overcome lift induced drag at zero bank
-
-    cosphi = (1 - phi * phi / 2); // first two terms of mclaurin series for cos(phi)
-    netto_rate = climb_rate + aspd * (C1 + C2 / (cosphi * cosphi));  // effect of aircraft drag removed
-    return netto_rate;
-
+    return _vario.correct_netto_rate(climb_rate, phi, aspd, polar_K, polar_CD0, polar_B);
 }
-
 
 float SoaringController::McCready(float alt)
 {
@@ -836,20 +705,6 @@ void SoaringController::stop_computation()
 float SoaringController::get_roll_cmd()
 {
     return _pomdsoar.get_action();
-}
-
-
-bool SoaringController::vario_updated()
-{
-    if (_vario_updated)
-    {
-        _vario_updated = false;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }
 
 float SoaringController::get_roll() const

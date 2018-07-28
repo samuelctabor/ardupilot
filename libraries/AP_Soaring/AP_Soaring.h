@@ -64,7 +64,6 @@ class SoaringController
 
     // store aircraft location at last update
     struct Location _prev_update_location;
-    struct Location _prev_vario_update_location;
 
     // store time thermal was entered for hysteresis
     uint64_t _thermal_start_time_us;
@@ -75,30 +74,18 @@ class SoaringController
     // store time of last update
     uint64_t _prev_update_time;
 
-    // store time of last update of the vario
-    uint64_t _prev_vario_update_time;
-
-    float _vario_reading;
-    bool _vario_updated = false;
-    float _filtered_vario_reading;
-    float _filtered_vario_reading_rate;
-    float _last_alt;
-    float _alt;
     float _last_aspd;
     float _last_roll;
     float _last_total_E;
-    bool _new_data;
     float _loiter_rad;
     bool _throttle_suppressed;
     float _ekf_buffer[EKF_MAX_BUFFER_SIZE][3];
     unsigned _nsamples;
     unsigned _ptr = 0; // index into the _ekf_buffer
     float _wind_corrected_gspd = 0.01;
-    float _displayed_vario_reading;
-    float _aspd_filt;
     float correct_netto_rate(float climb_rate, float phi, float aspd) const;
     float McCready(float alt);
-    void get_wind_corrected_drift(const Location *current_loc, const Location *prev_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
+    void get_wind_corrected_drift(const Location *current_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
     int _msg_rate = 0;
     float _dx = 0;
@@ -169,12 +156,11 @@ public:
     bool is_active() const;
     bool get_throttle_suppressed() const { return _throttle_suppressed; }
     void set_throttle_suppressed(bool suppressed) { _throttle_suppressed = suppressed;  }
-    float get_vario_reading() { return _displayed_vario_reading; }
-    bool update_vario();
+    float get_vario_reading() { return _vario.displayed_reading; }
+    void update_vario();
     void soaring_policy_computation();
     void stop_computation();
     bool POMDSoar_active();
-    bool vario_updated();
     float get_roll_cmd();
     void send_test_out_msg(mavlink_channel_t chan);
     void send_status_msg(mavlink_channel_t chan);
