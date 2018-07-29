@@ -468,44 +468,22 @@ void SoaringController::init_ekf()
     float cov_q1 = powf(thermal_q1, 2); // State covariance
     float cov_q2 = powf(thermal_q2, 2); // State covariance
     const float init_q[4] = {cov_q1, cov_q2, cov_q2, cov_q2};
-    const MatrixN<float, 4> q{init_q};
+    const MatrixN<float,4> q{init_q};
     const float init_p[4] = {INITIAL_STRENGTH_COVARIANCE, INITIAL_RADIUS_COVARIANCE, INITIAL_POSITION_COVARIANCE, INITIAL_POSITION_COVARIANCE};
-    const MatrixN<float, 4> p{init_p};
+    const MatrixN<float,4> p{init_p};
     float ground_course = radians(_ahrs.get_gps().ground_course());
     float head_sin = sinf(ground_course); //sinf(_ahrs.yaw);
     float head_cos = cosf(ground_course); //cosf(_ahrs.yaw);
 
     // New state vector filter will be reset. Thermal location is placed in front of a/c
-    if (thermal_distance_ahead < 0)
-    {
-        const float init_xr[4] = { INITIAL_THERMAL_STRENGTH,
-            INITIAL_THERMAL_RADIUS,
-            0,
-            0 }; // Thermal location is placed at current location
-        const VectorN<float, 4> xr{ init_xr };
-        _ekf.reset(xr, p, q, r);
-        _nsamples = (unsigned)-thermal_distance_ahead * rate_hz;
-        if (_nsamples > EKF_MAX_BUFFER_SIZE) _nsamples = EKF_MAX_BUFFER_SIZE;
-        int k = _ptr - _nsamples;
-        if (k < 0) k += EKF_MAX_BUFFER_SIZE; // wrap around
+    const float init_xr[4] = {INITIAL_THERMAL_STRENGTH,
+                              INITIAL_THERMAL_RADIUS,
+                              thermal_distance_ahead * head_cos,
+                              thermal_distance_ahead * head_sin };
+    const VectorN<float,4> xr{init_xr};
 
-        for (unsigned i = 0; i < _nsamples; i++)
-        {
-            _ekf.update(_ekf_buffer[k][0], _ekf_buffer[k][1], _ekf_buffer[k][2]);
-            //gcs().send_text(MAV_SEVERITY_INFO, "Soaring: buff %d %f %f %f", i, (double)_ekf_buffer[k][0], (double)_ekf_buffer[k][1], (double)_ekf_buffer[k][2]);
-            k = (k + 1) % EKF_MAX_BUFFER_SIZE;
-        }
-    }
-    else
-    {
-        const float init_xr[4] = { INITIAL_THERMAL_STRENGTH,
-            INITIAL_THERMAL_RADIUS,
-            thermal_distance_ahead * head_cos,
-            thermal_distance_ahead * head_sin };
-        const VectorN<float, 4> xr{ init_xr };
-        // Also reset covariance matrix p so filter is not affected by previous data
-        _ekf.reset(xr, p, q, r);
-    }
+    // Also reset covariance matrix p so filter is not affected by previous data
+    _ekf.reset(xr, p, q, r);
 }
 
 
