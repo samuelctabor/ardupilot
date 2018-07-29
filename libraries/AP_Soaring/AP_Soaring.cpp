@@ -460,10 +460,6 @@ bool SoaringController::is_controlling_roll()
     return pomdp_on;
 }
 
-bool SoaringController::is_set_to_continue_past_thermal_locking_period()
-{
-    return _pomdsoar.is_set_to_continue_past_thermal_locking_period();
-}
 void SoaringController::update_thermalling()
 {
     struct Location current_loc;
@@ -562,12 +558,6 @@ bool SoaringController::is_active() const
     }
     // active when above 1700
     return hal.rcin->read(soar_active_ch-1) >= 1700;
-}
-
-
-bool SoaringController::POMDSoar_active()
-{
-    return _pomdsoar.are_computations_in_progress();
 }
 
 void SoaringController::soaring_policy_computation()

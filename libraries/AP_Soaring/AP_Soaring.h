@@ -96,7 +96,6 @@ public:
     void init_cruising();
     void update_thermalling();
     void update_cruising();
-    bool is_set_to_continue_past_thermal_locking_period();
     bool is_active() const;
     bool get_throttle_suppressed() const { return _throttle_suppressed; }
     void set_throttle_suppressed(bool suppressed) { _throttle_suppressed = suppressed;  }
@@ -104,7 +103,6 @@ public:
     void update_vario();
     void soaring_policy_computation();
     void stop_computation();
-    bool POMDSoar_active();
     float get_roll_cmd();
     void get_relative_position_wrt_home(Vector2f &vec) const;
     float get_aspd() const;
