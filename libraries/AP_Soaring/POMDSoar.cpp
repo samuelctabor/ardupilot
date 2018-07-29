@@ -293,6 +293,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         //gcs().send_text(MAV_SEVERITY_INFO, "head %f %f %f", hdx, hdy, wind_corrected_heading);
         float n[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+        // Normalise the trace of covariance matrix, if required.
         if (pomdp_norm_pth)
         {
             n[0] = fabsf(_sc->_ekf.X[0]) > 0.0f ? fabsf(_sc->_ekf.X[0]) : 1.0f;
@@ -304,22 +305,28 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         float trP = _sc->_ekf.P(0, 0) / n[0] + _sc->_ekf.P(1, 1) / n[1] + _sc->_ekf.P(2, 2) / n[2] + _sc->_ekf.P(3, 3) / n[3];
 
         // Update the correct mode (exploit vs explore) based on EKF covariance trace
-        _pomdp_mode = trP < pomdp_pth && pomdp_pth > 0.0f ? POMDP_MODE_EXPLOIT : POMDP_MODE_EXPLORE;
+        _pomdp_mode = trP < pomdp_pth && pomdp_pth > 0.0f ? POMPD_MODE_EXPLOIT : POMPD_MODE_EXPLORE;
         
         // Initialise actions accordingly.
         init_actions(_pomdp_mode);
+
+        // Determine appropriate number of action samples. Planning horizon in seconds times times samples/second.
         _n_action_samples = pomdp_hori * pomdp_k;
 
         if (_pomdp_mode==POMDP_MODE_EXPLOIT)
         {
+            // Extend horizon in exploitation mode.
             _n_action_samples = MIN(MAX_ACTION_SAMPLES, int(pomdp_hori * pomdp_k * pomdp_extend));
         }
 
+        //  Determine appropriate number of samples.
+        //  pompd_n = "Number of samples per action trajectory" - how is this different from n_action_samples?
         int n_samples = pomdp_n;
         float step_w = 1.0f;
 
         if (_pomdp_mode==POMDP_MODE_EXPLOIT && pomdp_plan_mode)
         {
+            // "Enable deterministic trajectory planning mode for the POMDP"
             n_samples = 1;
             step_w = 1.0f / pomdp_n;
         }
