@@ -76,10 +76,6 @@ protected:
     AP_Float alt_max;
     AP_Float alt_min;
     AP_Float alt_cutoff;
-    AP_Int8 pomdp_on;
-    AP_Float poly_a;
-    AP_Float poly_b;
-    AP_Float poly_c;
     AP_Int8 exit_mode;
 
 public:

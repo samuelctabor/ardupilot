@@ -125,181 +125,16 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("ENABLE_CH", 15, SoaringController, soar_active_ch, 0),
 
-    // @Param: POMDP_ON
-    // @DisplayName: Is the POMDSoar algorithm on?
-    // @Description: If 1, the soaring controller uses the POMDSoar algorithm. If 0, the soaring controller uses the ArduSoar algorithm.
-    // @Units: boolean
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_ON", 16, SoaringController, pomdp_on, 0),
-
-    // @Param: POMDP_N
-    // @DisplayName: Number of samples per action trajectory used by POMDSoar
-    // @Description: Number of samples per action trajectory used by POMDSoar.
-    // @Units: samples
-    // @Range: 0 100
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_N", 17, SoaringController, _pomdsoar.pomdp_n, 10),
-
-    // @Param: POMDP_K
-    // @DisplayName: Number of POMDP sample points per 1 second of an action's trajectory used by POMDSoar.
-    // @Description: Number of POMDP sample points per 1 second of an action's trajectory used by POMDSoar.
-    // @Units: samples
-    // @Range: 0 100
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_K", 18, SoaringController, _pomdsoar.pomdp_k, 5),
-
-    // @Param: POMDP_HORI
-    // @DisplayName: POMDP planning horizon used by POMDSoar.
-    // @Description: POMDP planning horizon used by POMDSoar.
-    // @Units: seconds
-    // @Range: 0 1000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_HORI", 19, SoaringController, _pomdsoar.pomdp_hori, 4.0),
-
-    // @Param: POMDP_STEP_T
-    // @DisplayName:POMDP planning step solve time
-    // @Description: The amount of computation time the POMDP solver has for computing the next action
-    // @Units: seconds
-    // @Range: 0 1000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_STEP", 22, SoaringController, _pomdsoar.pomdp_step_t, 1),
-
-    // @Param: POMDP_LOOP
-    // @DisplayName: Number of POMDP solver's inner loop executions per planning step
-    // @Description: Number of POMDP solver's inner loop executions per planning step (see also the POMDP_STEP_T parameter)
-    // @Units:
-    // @Range: 0 1000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_LOOP", 23, SoaringController, _pomdsoar.pomdp_loop_load, 1),
-
-    // @Param: POMDP_ROLL1
-    // @DisplayName: POMDP's maximum commanded roll angle.
-    // @Description: Maximum commanded roll angle in the POMDP used by POMDSoar.
-    // @Units: degrees
-    // @Range: 0 1000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_ROLL1", 25, SoaringController, _pomdsoar.pomdp_roll1, 15),
-
-    // @Param: POMDP_ROLL2
-    // @DisplayName: POMDP's minimum commanded roll angle.
-    // @Description: Minimum commanded roll angle in the POMDP used by POMDSoar.
-    // @Units: degrees
-    // @Range: 0 1000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_ROLL2", 26, SoaringController, _pomdsoar.pomdp_roll2, 45),
-
-    // @Param: POMDP_RRATE
-    // @DisplayName: The sailplane UAV's roll rate increment used by POMDSoar
-    // @Description: The sailplane UAV's roll rate increment used by POMDSoar.
-    // @Units: degrees/second
-    // @Range: 0 1000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_RRATE", 27, SoaringController, _pomdsoar.pomdp_roll_rate, 75),
-
-    // @Param: POMDP_N_ACT
-    // @DisplayName: POMDP number of actions
-    // @Description: Number of actions in the POMDP used by POMDSoar. The roll angle input commands corresponding to actions are endpoints of (POMDP_N_ACT-1) equal intervals between POMDP_ROLL2 and POMDP_ROLL1 (inclusive).
-    // @Units: seconds
-    // @Range: 1 254
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_N_ACT", 28, SoaringController, _pomdsoar.pomdp_n_actions, 2),
-
-    // @Param: I_MOMENT
-    // @DisplayName: I-moment coefficient
-    // @Description: Airframe-specific I-moment coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
-    // @Units:
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("I_MOMENT", 29, SoaringController, _pomdsoar.I_moment, 0.00257482),
-
-    // @Param: K_AILERON
-    // @DisplayName: Aileron K coefficient
-    // @Description: Airframe-specific aileron K coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
-    // @Units: seconds
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("K_AILERON", 30, SoaringController, _pomdsoar.k_aileron, 1.44833047),
-
-    // @Param: K_ROLLDAMP
-    // @DisplayName: Roll dampening K coefficient
-    // @Description: Airframe-specific roll-dampening K coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
-    // @Units:
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("K_ROLLDAMP", 31, SoaringController, _pomdsoar.k_roll_damping, 0.41073589),
-
-    // @Param: ROLL_CLP
-    // @DisplayName: CLP coefficient
-    // @Description: Airframe-specific CLP coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
-    // @Units:
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("ROLL_CLP", 32, SoaringController, _pomdsoar.c_lp, -1.12808702679),
-
-    // @Param: POLY_A
-    // @DisplayName: Sink polynomial coefficient a
-    // @Description: a*x^2 + b*x + c sink polynomial for netto vario correction
-    // @Units:
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("POLY_A", 34, SoaringController, poly_a, -0.03099261),
-
-    // @Param: POLY_B
-    // @DisplayName: Sink polynomial coefficient b
-    // @Description: a*x^2 + b*x + c sink polynomial for netto vario correction
-    // @Units:
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("POLY_B", 35, SoaringController, poly_b, 0.44731854),
-
-    // @Param: POLY_C
-    // @DisplayName: Sink polynomial coefficient c
-    // @Description: a*x^2 + b*x + c sink polynomial for netto vario correction
-    // @Units:
-    // @Range: -10000 10000
-    // @User: Advanced
-    AP_GROUPINFO("POLY_C", 36, SoaringController, poly_c, -2.30292972),
-
-    // @Param: POMDP_TH
-    // @DisplayName: POMDSoar's threshold on tr(P) for switching between explore and max-lift modes.
-    // @Description: POMDSoar's threshold on the P matrix trace for switching between explore and max-lift modes.
-    // @Units:
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_PTH", 37, SoaringController, _pomdsoar.pomdp_pth, 50),
-
     // @Param: EXIT_MODE
     // @DisplayName: Thermal exit mode
     // @Description: Thermal exit mode. 0 = ArduSoar, 1 (recommended) or 2 = POMDP. It's possible to use ArduSoar's thermal exit mode with POMDSoar, but ArduSoar can only use its own thermal exit mode, 0.
     // @Units:
     // @Range: 0 2
     // @User: Advanced
-    AP_GROUPINFO("EXIT_MODE", 39, SoaringController, exit_mode, 0),
+    AP_GROUPINFO("EXIT_MODE", 16, SoaringController, exit_mode, 0),
 
-    // @Param: POMDP_NORM
-    // @DisplayName: Normalize the P matrix trace when solving the POMDP
-    // @Description: Normalize the trace of the P matrix used for switching between explore and max-lift modes in POMDSoar. 0 = no normalizing, 1 = normalize tr(P)
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_NORM", 40, SoaringController, _pomdsoar.pomdp_norm_pth, 0),
-
-    // @Param: POMDP_EXT
-    // @DisplayName: Enable action duration extension in POMDSoar's max-lift mode compared to the explore mode
-    // @Description: 0 = off, > 1 = multiplicative factor by which to extend action duration in max-lift compared to the explore mode.
-    // @Units:
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_EXT", 45, SoaringController, _pomdsoar.pomdp_extend, 0),
-
-    // @Param: POMDP_PLN
-    // @DisplayName: Enable deterministic trajectory planning mode for the POMDP
-    // @Description: Enable deterministic trajectory planning mode for the POMDP. 0 = off, 1 on.
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("POMDP_PLN", 46, SoaringController, _pomdsoar.pomdp_plan_mode, 0),
+    //POMDP params.
+    AP_SUBGROUPINFO(_pomdsoar, "POMD_", 17, SoaringController, POMDSoarAlgorithm),
 
     AP_GROUPEND
 };
@@ -361,7 +196,7 @@ bool SoaringController::check_cruise_criteria()
     float thermalability = -1e6;
     float alt = _vario.alt;
 
-    if (pomdp_on && (exit_mode == 1 || exit_mode == 2)) {
+    if (_pomdsoar.pomdp_on && (exit_mode == 1 || exit_mode == 2)) {
         thermalability = _pomdsoar.assess_thermalability(uint8_t(exit_mode));
     } else {
         _loiter_rad = _aparm.loiter_radius;
@@ -420,7 +255,7 @@ void SoaringController::init_thermalling()
 
     init_ekf();
 
-    if (pomdp_on) {
+    if (_pomdsoar.pomdp_on) {
         _pomdsoar.init_thermalling();
     }
 }
@@ -457,7 +292,7 @@ bool SoaringController::is_controlling_roll()
 {
     // Only the POMDP algorithm sets target roll directly.
     // The other method uses waypoints and the built-in navigation controller.
-    return pomdp_on;
+    return _pomdsoar.pomdp_on;
 }
 
 void SoaringController::update_thermalling()
@@ -466,11 +301,14 @@ void SoaringController::update_thermalling()
     _ahrs.get_position(current_loc);
 
     if (soar_active
-        && pomdp_on
+        && _pomdsoar.pomdp_on
         && _pomdsoar.are_computations_in_progress()
         && (is_in_thermal_locking_period() || _pomdsoar.is_set_to_continue_past_thermal_locking_period()))
     {
         _pomdsoar.update_thermalling(current_loc);
+
+        gcs().send_text(MAV_SEVERITY_INFO, "Action %f", _pomdsoar.get_action());
+
     }
 
     if (_vario.new_data) {
@@ -562,7 +400,7 @@ bool SoaringController::is_active() const
 
 void SoaringController::soaring_policy_computation()
 {
-    if (pomdp_on)
+    if (_pomdsoar.pomdp_on)
     {
         _pomdsoar.update_internal_state();
     }

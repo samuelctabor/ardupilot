@@ -54,6 +54,10 @@ private:
     PomdpSolver _solver;
     const SoaringController *_sc;
 
+    AP_Int8 pomdp_on;
+    AP_Float poly_a;
+    AP_Float poly_b;
+    AP_Float poly_c;
     AP_Int16 pomdp_n;
     AP_Int16 pomdp_k;
     AP_Float pomdp_hori;
@@ -76,6 +80,7 @@ private:
 
 public:
     POMDSoarAlgorithm(const SoaringController *sc, AP_RollController &rollController, AP_Float &scaling_speed);
+    static const struct AP_Param::GroupInfo var_info[];
     void init_thermalling();
     float assess_thermalability(uint8_t exit_mode);
     bool are_computations_in_progress();

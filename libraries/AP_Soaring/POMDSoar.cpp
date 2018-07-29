@@ -5,11 +5,185 @@
 #include "AP_Soaring.h"
 #include "POMDSoar.h"
 
+// ArduSoar parameters
+const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {
+    // @Param: ENABLE
+    // @DisplayName: Is the POMDSoar algorithm on?
+    // @Description: If 1, the soaring controller uses the POMDSoar algorithm. If 0, the soaring controller uses the ArduSoar algorithm.
+    // @Units: boolean
+    // @Range: 0 1
+    // @User: Advanced
+    AP_GROUPINFO_FLAGS("ENABLE", 1, POMDSoarAlgorithm, pomdp_on, 0, AP_PARAM_FLAG_ENABLE),
+
+    // @Param: N
+    // @DisplayName: Number of samples per action trajectory used by POMDSoar
+    // @Description: Number of samples per action trajectory used by POMDSoar.
+    // @Units: samples
+    // @Range: 0 100
+    // @User: Advanced
+    AP_GROUPINFO("N", 2, POMDSoarAlgorithm, pomdp_n, 10),
+
+    // @Param: K
+    // @DisplayName: Number of POMDP sample points per 1 second of an action's trajectory used by POMDSoar.
+    // @Description: Number of POMDP sample points per 1 second of an action's trajectory used by POMDSoar.
+    // @Units: samples
+    // @Range: 0 100
+    // @User: Advanced
+    AP_GROUPINFO("K", 3, POMDSoarAlgorithm, pomdp_k, 5),
+
+    // @Param: HORI
+    // @DisplayName: POMDP planning horizon used by POMDSoar.
+    // @Description: POMDP planning horizon used by POMDSoar.
+    // @Units: seconds
+    // @Range: 0 1000
+    // @User: Advanced
+    AP_GROUPINFO("HORI", 4, POMDSoarAlgorithm, pomdp_hori, 4.0),
+
+    // @Param: STEP_T
+    // @DisplayName:POMDP planning step solve time
+    // @Description: The amount of computation time the POMDP solver has for computing the next action
+    // @Units: seconds
+    // @Range: 0 1000
+    // @User: Advanced
+    AP_GROUPINFO("STEP", 5, POMDSoarAlgorithm, pomdp_step_t, 1),
+
+    // @Param: LOOP
+    // @DisplayName: Number of POMDP solver's inner loop executions per planning step
+    // @Description: Number of POMDP solver's inner loop executions per planning step (see also the STEP_T parameter)
+    // @Units:
+    // @Range: 0 1000
+    // @User: Advanced
+    AP_GROUPINFO("LOOP", 6, POMDSoarAlgorithm, pomdp_loop_load, 1),
+
+    // @Param: ROLL1
+    // @DisplayName: POMDP's maximum commanded roll angle.
+    // @Description: Maximum commanded roll angle in the POMDP used by POMDSoar.
+    // @Units: degrees
+    // @Range: 0 1000
+    // @User: Advanced
+    AP_GROUPINFO("ROLL1", 7, POMDSoarAlgorithm, pomdp_roll1, 15),
+
+    // @Param: ROLL2
+    // @DisplayName: POMDP's minimum commanded roll angle.
+    // @Description: Minimum commanded roll angle in the POMDP used by POMDSoar.
+    // @Units: degrees
+    // @Range: 0 1000
+    // @User: Advanced
+    AP_GROUPINFO("ROLL2", 8, POMDSoarAlgorithm, pomdp_roll2, 45),
+
+    // @Param: RRATE
+    // @DisplayName: The sailplane UAV's roll rate increment used by POMDSoar
+    // @Description: The sailplane UAV's roll rate increment used by POMDSoar.
+    // @Units: degrees/second
+    // @Range: 0 1000
+    // @User: Advanced
+    AP_GROUPINFO("RRATE", 9, POMDSoarAlgorithm, pomdp_roll_rate, 75),
+
+    // @Param: N_ACT
+    // @DisplayName: POMDP number of actions
+    // @Description: Number of actions in the POMDP used by POMDSoar. The roll angle input commands corresponding to actions are endpoints of (N_ACT-1) equal intervals between ROLL2 and ROLL1 (inclusive).
+    // @Units: seconds
+    // @Range: 1 254
+    // @User: Advanced
+    AP_GROUPINFO("N_ACT", 10, POMDSoarAlgorithm, pomdp_n_actions, 2),
+
+    // @Param: I_MOMENT
+    // @DisplayName: I-moment coefficient
+    // @Description: Airframe-specific I-moment coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
+    // @Units:
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("I_MOM", 11, POMDSoarAlgorithm, I_moment, 0.00257482),
+
+    // @Param: K_AILERON
+    // @DisplayName: Aileron K coefficient
+    // @Description: Airframe-specific aileron K coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
+    // @Units: seconds
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("K_AIL", 12, POMDSoarAlgorithm, k_aileron, 1.44833047),
+
+    // @Param: K_ROLLDAMP
+    // @DisplayName: Roll dampening K coefficient
+    // @Description: Airframe-specific roll-dampening K coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
+    // @Units:
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("RLLDMP", 13, POMDSoarAlgorithm, k_roll_damping, 0.41073589),
+
+    // @Param: ROLL_CLP
+    // @DisplayName: CLP coefficient
+    // @Description: Airframe-specific CLP coefficient used by POMDSoar to model the trajectory corresponding to a given commanded roll angle.
+    // @Units:
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("RLLCLP", 14, POMDSoarAlgorithm, c_lp, -1.12808702679),
+
+    // @Param: POLY_A
+    // @DisplayName: Sink polynomial coefficient a
+    // @Description: a*x^2 + b*x + c sink polynomial for netto vario correction
+    // @Units:
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("POLY_A", 15, POMDSoarAlgorithm, poly_a, -0.03099261),
+
+    // @Param: POLY_B
+    // @DisplayName: Sink polynomial coefficient b
+    // @Description: a*x^2 + b*x + c sink polynomial for netto vario correction
+    // @Units:
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("POLY_B", 16, POMDSoarAlgorithm, poly_b, 0.44731854),
+
+    // @Param: POLY_C
+    // @DisplayName: Sink polynomial coefficient c
+    // @Description: a*x^2 + b*x + c sink polynomial for netto vario correction
+    // @Units:
+    // @Range: -10000 10000
+    // @User: Advanced
+    AP_GROUPINFO("POLY_C", 17, POMDSoarAlgorithm, poly_c, -2.30292972),
+
+    // @Param: TH
+    // @DisplayName: POMDSoar's threshold on tr(P) for switching between explore and max-lift modes.
+    // @Description: POMDSoar's threshold on the P matrix trace for switching between explore and max-lift modes.
+    // @Units:
+    // @Range: 0 10000
+    // @User: Advanced
+    AP_GROUPINFO("PTH", 18, POMDSoarAlgorithm, pomdp_pth, 50),
+
+    // @Param: NORM
+    // @DisplayName: Normalize the P matrix trace when solving the POMDP
+    // @Description: Normalize the trace of the P matrix used for switching between explore and max-lift modes in POMDSoar. 0 = no normalizing, 1 = normalize tr(P)
+    // @Units:
+    // @Range: 0 1
+    // @User: Advanced
+    AP_GROUPINFO("NORM", 19, POMDSoarAlgorithm, pomdp_norm_pth, 0),
+
+    // @Param: EXT
+    // @DisplayName: Enable action duration extension in POMDSoar's max-lift mode compared to the explore mode
+    // @Description: 0 = off, > 1 = multiplicative factor by which to extend action duration in max-lift compared to the explore mode.
+    // @Units:
+    // @Range: 0 10000
+    // @User: Advanced
+    AP_GROUPINFO("EXT", 20, POMDSoarAlgorithm, pomdp_extend, 0),
+
+    // @Param: PLN
+    // @DisplayName: Enable deterministic trajectory planning mode for the POMDP
+    // @Description: Enable deterministic trajectory planning mode for the POMDP. 0 = off, 1 on.
+    // @Units:
+    // @Range: 0 1
+    // @User: Advanced
+    AP_GROUPINFO("PLN", 21, POMDSoarAlgorithm, pomdp_plan_mode, 0),
+
+    AP_GROUPEND
+};
+
 POMDSoarAlgorithm::POMDSoarAlgorithm(const SoaringController *sc, AP_RollController &rollController, AP_Float &scaling_speed) :
     _sc(sc),
     _gains(rollController.get_gains()),
     _scaling_speed(scaling_speed)
 {
+    AP_Param::setup_object_defaults(this, var_info);
     _prev_pomdp_update_time = AP_HAL::micros64();
 }
 
@@ -84,7 +258,7 @@ void POMDSoarAlgorithm::init_thermalling()
 
     // Prepare everything necessary for generating action trajectories (by modelling trajectories resulting from various commanded roll angles)
     _solver.set_pid_gains(_gains.P, _gains.I, _gains.D, _gains.FF, _gains.tau, _gains.imax, _gains.rmax, _scaling_speed);
-    _solver.set_polar(float(_sc->poly_a), float(_sc->poly_b), float(_sc->poly_c));
+    _solver.set_polar(float(poly_a), float(poly_b), float(poly_c));
     _n_action_samples = pomdp_hori * pomdp_k;
 
     _solver.generate_action_paths(aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()),
