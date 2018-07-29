@@ -336,7 +336,6 @@ SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, co
     _vario(ahrs,spdHgt,parms),
     _loiter_rad(parms.loiter_radius),
     _throttle_suppressed(true),
-    _gps(ahrs.get_gps()),
     _pomdsoar(this, rollController, scaling_speed)
 {
     AP_Param::setup_object_defaults(this, var_info);
@@ -532,6 +531,7 @@ void SoaringController::update_thermalling()
 
         //log_data();
         _ekf.update(_vario.reading,dx, dy);       // update the filter
+
         _prev_update_location = current_loc;      // save for next time
         _prev_update_time = AP_HAL::micros64();
         _vario.new_data = false;

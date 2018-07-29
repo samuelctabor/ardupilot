@@ -16,11 +16,10 @@
 #include <DataFlash/DataFlash.h>
 #include <AP_Math/AP_Math.h>
 #include "ExtendedKalmanFilter.h"
+#include "Variometer.h"
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
 #include "WindExtendedKalmanFilter.h"
-#include "Variometer.h"
 #include "POMDSoar.h"
-
 
 #define EXPECTED_THERMALLING_SINK 0.7
 #define INITIAL_THERMAL_STRENGTH 2.0
@@ -32,13 +31,8 @@
 #define SOARING_RND_UPDATE_RATE 20 // 260 microseconds of Box Miller 4D rnd samples
 
 
-class POMDSoarAlgorithm;
+class SoaringController {
 
-//
-// Soaring Controller class
-//
-class SoaringController
-{
     friend class POMDSoarAlgorithm;
 
     ExtendedKalmanFilter _ekf{};
@@ -47,8 +41,6 @@ class SoaringController
     AP_SpdHgtControl &_spdHgt;
     const AP_Vehicle::FixedWing &_aparm;
     Variometer _vario;
-    const AP_GPS &_gps;
-    const float rate_hz = 5;
 
     // store aircraft location at last update
     struct Location _prev_update_location;
@@ -62,13 +54,9 @@ class SoaringController
     // store time of last update
     uint64_t _prev_update_time;
 
-    float _last_aspd;
-    float _last_roll;
-    float _last_total_E;
     float _loiter_rad;
     bool _throttle_suppressed;
     float _ekf_buffer[EKF_MAX_BUFFER_SIZE][3];
-    unsigned _nsamples;
     unsigned _ptr = 0; // index into the _ekf_buffer
     float _wind_corrected_gspd = 0.01;
     float correct_netto_rate(float climb_rate, float phi, float aspd) const;
@@ -106,7 +94,6 @@ protected:
 
 public:
     SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);
-    
     // this supports the TECS_* user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
     void get_target(Location & wp);
@@ -129,10 +116,6 @@ public:
     void stop_computation();
     bool POMDSoar_active();
     float get_roll_cmd();
-    void send_test_out_msg(mavlink_channel_t chan);
-    void send_status_msg(mavlink_channel_t chan);
-    void handle_control_msg(mavlink_message_t* msg);
-    void handle_test_in_msg(mavlink_message_t* msg);
     void get_relative_position_wrt_home(Vector2f &vec) const;
     float get_aspd() const;
     void get_position(Location& loc);

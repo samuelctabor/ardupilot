@@ -264,16 +264,6 @@ void Plane::send_vfr_hud(mavlink_channel_t chan)
         (g2.soaring_controller.is_active() ? g2.soaring_controller.get_vario_reading() : barometer.get_climb_rate()));
 }
 
-// Send status mavlink message from the Soaring Controller
-void Plane::send_soar_status(mavlink_channel_t chan) {
-    g2.soaring_controller.send_status_msg(chan);
-}
-
-// Send test mavlink message from the Soaring Controller
-void Plane::send_soar_test_out(mavlink_channel_t chan) {
-	g2.soaring_controller.send_test_out_msg(chan);
-}
-
 /*
   keep last HIL_STATE message to allow sending SIM_STATE
  */
