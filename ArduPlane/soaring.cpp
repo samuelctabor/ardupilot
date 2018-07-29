@@ -42,7 +42,6 @@ void Plane::update_soaring() {
 
     switch (control_mode){
     case AUTO:
-        g2.soaring_controller.stop_computation();
     case FLY_BY_WIRE_B:
     case CRUISE:
         // Test for switch into thermalling mode
@@ -55,13 +54,13 @@ void Plane::update_soaring() {
         break;
 
     case LOITER:
-        // Stop POMDSoar's computations, if they are in progress
-        g2.soaring_controller.stop_computation();
         // Update thermal estimate and check for switch back to AUTO
         g2.soaring_controller.update_thermalling();  // Update estimate
 
         if (g2.soaring_controller.check_cruise_criteria()) {
             // Exit as soon as thermal state estimate deteriorates
+            g2.soaring_controller.stop_computation();
+
             switch (previous_mode) {
             case FLY_BY_WIRE_B:
                 gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Thermal ended, entering RTL");
@@ -91,8 +90,6 @@ void Plane::update_soaring() {
             g2.soaring_controller.get_target(next_WP_loc);
         }
         break;
-    case MANUAL:
-        g2.soaring_controller.stop_computation();
     default:
         // nothing to do
         break;

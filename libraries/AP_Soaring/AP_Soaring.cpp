@@ -372,7 +372,7 @@ bool SoaringController::check_cruise_criteria()
         thermalability = (_ekf.X[0] * expf(-powf(_loiter_rad / _ekf.X[1], 2))) - EXPECTED_THERMALLING_SINK;
     }
 
-    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt)) {
+    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt) && _pomdsoar.ok_to_stop()) {
         gcs().send_text(MAV_SEVERITY_INFO, "Thermal weak, recommend quitting: W %f R %f th %f alt %f Mc %f\n", (double)_ekf.X[0], (double)_ekf.X[1], (double)thermalability, (double)alt, (double)McCready(alt));
         return true;
     } else if (soar_active && (alt>alt_max || alt<alt_min)) {
@@ -422,10 +422,10 @@ void SoaringController::init_thermalling()
     _prev_update_time = AP_HAL::micros64();
     _thermal_start_time_us = AP_HAL::micros64();
 
+    init_ekf();
+
     if (pomdp_on) {
         _pomdsoar.init_thermalling();
-    } else {
-        init_ekf();
     }
 }
 
@@ -478,13 +478,7 @@ void SoaringController::update_thermalling()
         && _pomdsoar.are_computations_in_progress()
         && (is_in_thermal_locking_period() || _pomdsoar.is_set_to_continue_past_thermal_locking_period()))
     {
-        bool is_ok_to_stop = _pomdsoar.update_thermalling(current_loc);
-
-        if (is_ok_to_stop && check_cruise_criteria()) {
-            _pomdsoar.stop_computations();
-        }
-    } else {
-        _pomdsoar.stop_computations();
+        _pomdsoar.update_thermalling(current_loc);
     }
 
     if (_vario.new_data) {

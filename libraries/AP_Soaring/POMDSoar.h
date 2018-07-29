@@ -87,6 +87,7 @@ public:
     uint64_t get_latest_pomdp_solve_time();
     float get_action();
     void send_test_out_msg(mavlink_channel_t chan);
-    bool update_thermalling(const Location &current_loc);
+    void update_thermalling(const Location &current_loc);
     void run_tests();
+    bool ok_to_stop();
 };

@@ -273,10 +273,8 @@ void POMDSoarAlgorithm::send_test_out_msg(mavlink_channel_t chan)
 }
 
 
-bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
+void POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
 {
-    bool is_ok_to_stop = false;
-
     if (!_solver.running())
     {
         _pomdp_solve_time = AP_HAL::micros64() - _prev_pomdp_update_time;
@@ -339,11 +337,6 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         _prev_pomdp_update_time = AP_HAL::micros64();
         _prev_pomdp_action = action;
 
-        if (is_set_to_continue_past_thermal_locking_period())
-        {
-            is_ok_to_stop = true;
-        }
-
         DataFlash_Class::instance()->Log_Write("POMP", "TimeUS,n,k,action,x,y,sign,lat,lng,rlat,rlng,roll,mode,Q", "QQHHBfffLLLLfB",
             AP_HAL::micros64(),
             pomdp_n,
@@ -394,8 +387,11 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         _pomp_loop_min_time = (unsigned long)1e12;
         _pomp_loop_max_time = 0;
     }
+}
 
-    return is_ok_to_stop;
+bool POMDSoarAlgorithm::ok_to_stop()
+{
+    return (!_solver.running() && is_set_to_continue_past_thermal_locking_period());
 }
 
 
