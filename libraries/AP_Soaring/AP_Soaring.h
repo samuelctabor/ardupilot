@@ -87,7 +87,6 @@ class SoaringController
     float McCready(float alt);
     void get_wind_corrected_drift(const Location *current_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
-    int _msg_rate = 0;
     bool _vario_updated_reset_random = false;
     float _test_thml_x = 20;
     float _test_thml_y = 20;
@@ -163,8 +162,6 @@ public:
     float get_rate() const;
     float get_roll() const;
     float get_eas2tas() const;
-    void run_tests();
     void get_heading_estimate(float *hdx, float *hdy) const;
     void get_velocity_estimate(float dt, float *v0) const;
-    void run_timing_test8();
 };

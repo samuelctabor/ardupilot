@@ -12,7 +12,6 @@ void Plane::update_soaring() {
     }
     
     g2.soaring_controller.update_vario();
-    g2.soaring_controller.run_tests();
 
     // Check for throttle suppression change.
     switch (control_mode){
