@@ -446,8 +446,6 @@ bool SoaringController::check_cruise_criteria()
         thermalability = (_ekf.X[0] * expf(-powf(_loiter_rad / _ekf.X[1], 2))) - EXPECTED_THERMALLING_SINK;
     }
 
-    _msg_rate++;
-
     if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt))
     {
         gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: w %f W %f R %f", (double)thermalability, (double)_ekf.X[0], (double)_ekf.X[1]);
@@ -458,11 +456,6 @@ bool SoaringController::check_cruise_criteria()
     {
         gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise. Alt = %f\n", (double)alt);
         return true;
-    }
-    else if (_msg_rate == 50)
-    {
-        gcs().send_text(MAV_SEVERITY_INFO, "Thermal: w %f W %f R %f", (double)thermalability, (double)_ekf.X[0], (double)_ekf.X[1]);
-        _msg_rate = 0;
     }
 
     return false;
