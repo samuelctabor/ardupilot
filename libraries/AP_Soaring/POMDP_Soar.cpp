@@ -311,7 +311,7 @@ bool POMDSoarAlgorithm::are_computations_in_progress()
 }
 
 
-void POMDSoarAlgorithm::update_internal_state()
+void POMDSoarAlgorithm::update_solver()
 {
     if (_solver.running())
     {
@@ -326,7 +326,7 @@ void POMDSoarAlgorithm::update_internal_state()
 }
 
 
-void POMDSoarAlgorithm::update_internal_state_test()
+void POMDSoarAlgorithm::update_solver_test()
 {
     _solver.update_test();
 }

@@ -402,7 +402,7 @@ void SoaringController::soaring_policy_computation()
 {
     if (_pomdsoar.pomdp_on)
     {
-        _pomdsoar.update_internal_state();
+        _pomdsoar.update_solver();
     }
 }
 

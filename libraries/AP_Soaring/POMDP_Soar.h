@@ -85,8 +85,8 @@ public:
     float assess_thermalability(uint8_t exit_mode);
     bool are_computations_in_progress();
     void stop_computations();
-    void update_internal_state();
-    void update_internal_state_test();
+    void update_solver();
+    void update_solver_test();
     bool is_set_to_continue_past_thermal_locking_period();
     int get_curr_mode();
     uint64_t get_latest_pomdp_solve_time();
