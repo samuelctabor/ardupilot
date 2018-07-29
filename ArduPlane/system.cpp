@@ -471,13 +471,11 @@ void Plane::set_mode(enum FlightMode mode, mode_reason_t reason)
         auto_navigation_mode = true;
         do_loiter_at_location();
 		
-        /*
         if (g2.soaring_controller.is_active() &&
             g2.soaring_controller.suppress_throttle()) {
 			g2.soaring_controller.init_thermalling();
 			g2.soaring_controller.get_target(next_WP_loc); // ahead on flight path
 		}
-		*/
         break;
 
     case AVOID_ADSB:
