@@ -84,14 +84,8 @@ void POMDSoarAlgorithm::init_thermalling()
     _solver.set_pid_gains(_gains.P, _gains.I, _gains.D, _gains.FF, _gains.tau, _gains.imax, _gains.rmax, _scaling_speed);
     _solver.set_polar(float(_sc->poly_a), float(_sc->poly_b), float(_sc->poly_c));
     _n_action_samples = pomdp_hori * pomdp_k;
-    float pomdp_aspd = aspd;
 
-    if (_sc->aspd_cmd > 0)
-    {
-        pomdp_aspd = _sc->aspd_cmd;
-    }
-
-    _solver.generate_action_paths(pomdp_aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()),
+    _solver.generate_action_paths(aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()),
         degrees(_sc->get_rate()), _pomdp_roll_cmd, pomdp_k, _n_actions, _roll_cmds,
         pomdp_step_t, pomdp_hori, float(I_moment), float(k_aileron), float(k_roll_damping), float(c_lp), 0);
     _m = 0;
@@ -336,13 +330,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
             step_w = 1.0f / pomdp_n;
         }
 
-        float pomdp_aspd = aspd;
-
-        if (_sc->aspd_cmd > 0) {
-            pomdp_aspd = _sc->aspd_cmd;
-        }
-
-        _solver.generate_action_paths(pomdp_aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()), degrees(_sc->get_rate()), _pomdp_roll_cmd, pomdp_k, _n_actions, _roll_cmds,
+        _solver.generate_action_paths(aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()), degrees(_sc->get_rate()), _pomdp_roll_cmd, pomdp_k, _n_actions, _roll_cmds,
             pomdp_step_t * step_w, pomdp_hori, float(I_moment), float(k_aileron), float(k_roll_damping), float(c_lp), extend);
         _m = 0;
         _solver.init_step(pomdp_loop_load, n_samples, _sc->_ekf.X, _sc->_ekf.P, _sc->_ekf.Q, _sc->_ekf.R, _weights, max_lift);

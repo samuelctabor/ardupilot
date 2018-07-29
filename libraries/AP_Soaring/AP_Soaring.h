@@ -81,8 +81,6 @@ protected:
     AP_Float poly_b;
     AP_Float poly_c;
     AP_Int8 exit_mode;
-    AP_Int8 gps_sync;
-    AP_Float aspd_cmd;
 
 public:
     SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);

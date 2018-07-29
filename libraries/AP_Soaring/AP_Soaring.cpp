@@ -301,14 +301,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_PLN", 46, SoaringController, _pomdsoar.pomdp_plan_mode, 0),
 
-    // @Param: ARSP_CMD
-    // @DisplayName: Commanded airspeed
-    // @Description: Commanded airspeed.
-    // @Units: m/s
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("ARSP_CMD", 48, SoaringController, aspd_cmd, 9),
-
     AP_GROUPEND
 };
 
