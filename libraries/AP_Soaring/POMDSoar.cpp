@@ -432,69 +432,63 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
 
 void POMDSoarAlgorithm::run_tests()
 {
-    if (_sc->run_timing_test == 1)
-    {
-        uint64_t start_time = AP_HAL::micros64();
-        _solver.run_exp_test(1000);
-        uint64_t total_time = AP_HAL::micros64() - start_time;
-        gcs().send_text(MAV_SEVERITY_INFO, "Soaring exp test: %llu us", total_time);
-    }
-    else if (_sc->run_timing_test == 2)
-    {
-        uint64_t start_time = AP_HAL::micros64();
-        _solver.run_fast_exp_test(1000);
-        uint64_t total_time = AP_HAL::micros64() - start_time;
-        gcs().send_text(MAV_SEVERITY_INFO, "Soaring fast exp test: %llu us", total_time);
+    int8_t test_id = 1;
+    uint64_t start_time = AP_HAL::micros64();
+    uint64_t total_time   = 0;
+    uint64_t total_time_2 = 0;
 
-    }
-    else if (_sc->run_timing_test == 3)
-    {
-        uint64_t start_time = AP_HAL::micros64();
+    switch (test_id) {
+    case 1:
+        _solver.run_exp_test(1000);
+        total_time = AP_HAL::micros64() - start_time;
+        gcs().send_text(MAV_SEVERITY_INFO, "Soaring exp test: %llu us", total_time);
+        break;
+    case 2:
+        _solver.run_fast_exp_test(1000);
+        total_time = AP_HAL::micros64() - start_time;
+        gcs().send_text(MAV_SEVERITY_INFO, "Soaring fast exp test: %llu us", total_time);
+        break;
+    case 3:
         _solver.fill_random_array();
-        uint64_t total_time = AP_HAL::micros64() - start_time;
+        total_time = AP_HAL::micros64() - start_time;
         gcs().send_text(MAV_SEVERITY_INFO, "Soaring fill rnd array: %llu us", total_time);
-    }
-    else if (_sc->run_timing_test == 4)
-    {
-        uint64_t start_time = AP_HAL::micros64();
+        gcs().send_text(MAV_SEVERITY_INFO, "Soaring fill rnd array: %llu us", total_time);
+        break;
+    case 4:
         _solver.run_rnd_test(1000);
-        uint64_t total_time = AP_HAL::micros64() - start_time;
+        total_time = AP_HAL::micros64() - start_time;
         gcs().send_text(MAV_SEVERITY_INFO, "Soaring rnd test: %llu us", total_time);
-    }
-    else if (_sc->run_timing_test == 5)
-    {
-        uint64_t start_time = AP_HAL::micros64();
+        break;
+    case 5:
         _solver.run_ekf_test(1000);
-        uint64_t total_time = AP_HAL::micros64() - start_time;
+        total_time = AP_HAL::micros64() - start_time;
         gcs().send_text(MAV_SEVERITY_INFO, "Soaring EKF test: %llu us", total_time);
-    }
-    else if (_sc->run_timing_test == 6)
-    {
-        uint64_t start_time = AP_HAL::micros64();
+        break;
+    case 6:
         _solver.run_loop_test(1000, false);
-        uint64_t total_time = AP_HAL::micros64() - start_time;
+        total_time = AP_HAL::micros64() - start_time;
         start_time = AP_HAL::micros64();
         _solver.run_loop_test(1000, true);
-        uint64_t maxlift_total_time = AP_HAL::micros64() - start_time;
-        gcs().send_text(MAV_SEVERITY_INFO, "Soaring loop test: %llu us ML: %llu us", total_time, maxlift_total_time);
-    }
-    else if (_sc->run_timing_test == 7)
-    {
-        uint64_t start_time = AP_HAL::micros64();
+        total_time_2 = AP_HAL::micros64() - start_time;
+        gcs().send_text(MAV_SEVERITY_INFO, "Soaring loop test: %llu us ML: %llu us", total_time, total_time_2);
+        break;
+    case 7:
         _solver.run_multivariate_normal_sample_test(1000);
-        uint64_t total_time = AP_HAL::micros64() - start_time;
+        total_time = AP_HAL::micros64() - start_time;
         gcs().send_text(MAV_SEVERITY_INFO, "Soaring multivariate_normal test: %llu us", total_time);
-    } // test #8 is run by the SoaringController class itself
-    else if (_sc->run_timing_test == 9)
-    {
-        uint64_t start_time = AP_HAL::micros64();
+        break;
+    case 8:
+        // test #8 is run by the SoaringController class itself
+        break;
+    case 9:
         _solver.run_trig_box_muller_test(1000);
-        uint64_t total_trig_time = AP_HAL::micros64() - start_time;
+        total_time = AP_HAL::micros64() - start_time;
         start_time = AP_HAL::micros64();
         _solver.run_polar_box_muller_test(1000);
-        uint64_t total_polar_time = AP_HAL::micros64() - start_time;
-        gcs().send_text(MAV_SEVERITY_INFO, "Soaring box-muller trig: %llu us polar: %llu us", total_trig_time, total_polar_time);
+        total_time_2 = AP_HAL::micros64() - start_time;
+        gcs().send_text(MAV_SEVERITY_INFO, "Soaring box-muller trig: %llu us polar: %llu us", total_time, total_time_2);
+        break;
     }
 
-    _prev_run_timing_test = _sc->run_timing_test;
+    _prev_run_timing_test = test_id;
 }

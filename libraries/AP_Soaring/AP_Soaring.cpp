@@ -317,14 +317,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_PLN", 46, SoaringController, _pomdsoar.pomdp_plan_mode, 0),
 
-    // @Param: RUN_TEST
-    // @DisplayName: Run a timing test
-    // @Description: 0 = off, 1 = exp test
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("RUN_TEST", 47, SoaringController, run_timing_test, 0),
-
     // @Param: ARSP_CMD
     // @DisplayName: Commanded airspeed
     // @Description: Commanded airspeed.
@@ -332,38 +324,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Range: 0 10000
     // @User: Advanced
     AP_GROUPINFO("ARSP_CMD", 48, SoaringController, aspd_cmd, 9),
-
-    // @Param: TEST_DIST
-    // @DisplayName: Initial distance to the test thermal
-    // @Description: Initial distance to the test thermal's center from the UAV along the UAV's (straight) path.
-    // @Units: meters
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("TEST_DIST", 49, SoaringController, test_dist, 20),
-
-    // @Param: TEST_OFFSET
-    // @DisplayName: Offset of the test thermal
-    // @Description: Offset of the test thermal from the UAV's path.
-    // @Units: meters
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("TEST_OFFSET", 50, SoaringController, test_offset, 10),
-
-    // @Param: TEST_RADIUS
-    // @DisplayName: Radius of the test thermal
-    // @Description: Radius of the test thermal.
-    // @Units: meters
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("TEST_RADIUS", 51, SoaringController, test_radius, 20),
-
-    // @Param: TEST_STRENGTH
-    // @DisplayName: Strength of the test thermal
-    // @Description: Strength of the test thermal.
-    // @Units: m/s
-    // @Range: 0 10000
-    // @User: Advanced
-    AP_GROUPINFO("TEST_W", 52, SoaringController, test_strength, 2.5),
 
     AP_GROUPEND
 };
@@ -377,8 +337,7 @@ SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, co
     _loiter_rad(parms.loiter_radius),
     _throttle_suppressed(true),
     _gps(ahrs.get_gps()),
-    _pomdsoar(this, rollController, scaling_speed),
-    _prev_run_timing_test(0)
+    _pomdsoar(this, rollController, scaling_speed)
 {
     AP_Param::setup_object_defaults(this, var_info);
     _prev_update_time = AP_HAL::micros64();

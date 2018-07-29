@@ -29,20 +29,8 @@
 #define INITIAL_RADIUS_COVARIANCE 2500.0
 #define INITIAL_POSITION_COVARIANCE 300.0
 #define EKF_MAX_BUFFER_SIZE 300
-#define MAX_NUM_GEOFENCE_POINTS 12
 #define SOARING_RND_UPDATE_RATE 20 // 260 microseconds of Box Miller 4D rnd samples
 
-#define DBG_ASPD 1
-#define DBG_LAT 2
-#define DBG_LNG 3
-#define DBG_ALT 4
-#define DBG_ROLL 5
-#define DBG_ROLL_RATE 6
-#define DBG_WINDX 7
-#define DBG_WINDY 8
-#define DBG_VARIO 9
-#define DBG_GNDDX 10
-#define DBG_GNDDY 11
 
 class POMDSoarAlgorithm;
 
@@ -87,13 +75,7 @@ class SoaringController
     float McCready(float alt);
     void get_wind_corrected_drift(const Location *current_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
     void get_altitude_wrt_home(float *alt) const;
-    bool _vario_updated_reset_random = false;
-    float _test_thml_x = 20;
-    float _test_thml_y = 20;
-    float _test_thml_r = 20;
-    float _test_thml_w = 2.5;
-    Location _test_thml_loc;
-    uint8_t _prev_run_timing_test;
+
     POMDSoarAlgorithm _pomdsoar;
 
 protected:
@@ -119,13 +101,8 @@ protected:
     AP_Int8 aspd_src;
     AP_Int8 exit_mode;
     AP_Int8 disable_soar_prevention;
-    AP_Int8 run_timing_test;
     AP_Int8 gps_sync;
     AP_Float aspd_cmd;
-    AP_Float test_dist;
-    AP_Float test_offset;
-    AP_Float test_radius;
-    AP_Float test_strength;
 
 public:
     SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);
