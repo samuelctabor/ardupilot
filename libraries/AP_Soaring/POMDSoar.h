@@ -7,6 +7,11 @@
 #include "PomdpSolver.h"
 class SoaringController;
 
+enum POMPD_Mode
+{
+    POMPD_MODE_EXPLORE = 0,
+    POMPD_MODE_EXPLOIT = 1
+};
 
 //
 // POMDSoarAlgorithm, the POMDP/Bayesian RL-based logic used by SoaringController to decide on the course of action
@@ -37,7 +42,7 @@ private:
     int _j = 0;
     int _n_action_samples;
     bool _new_actions_to_send = false;
-    int _pomdp_mode = 0; // 0 = explore, 1 = max lift
+    POMPD_Mode _pomdp_mode = POMPD_MODE_EXPLORE;
     float _weights[4] = { 1, 1, 1, 1 };
     uint8_t _prev_run_timing_test;
 

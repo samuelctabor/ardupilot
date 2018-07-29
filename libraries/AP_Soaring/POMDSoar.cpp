@@ -94,7 +94,7 @@ void POMDSoarAlgorithm::init_thermalling()
     _prev_pomdp_update_time = _sc->_thermal_start_time_us;
     _prev_pomdp_wp = _sc->_prev_update_location;
     _pomdp_active = true;
-    _pomdp_mode = 0;
+    _pomdp_mode = POMPD_MODE_EXPLORE;
     _prev_pomdp_action = _sign > 0 ? _n_actions - 1 : 0;
 }
 
@@ -310,12 +310,12 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         }
 
         float trP = _sc->_ekf.P(0, 0) / n[0] + _sc->_ekf.P(1, 1) / n[1] + _sc->_ekf.P(2, 2) / n[2] + _sc->_ekf.P(3, 3) / n[3];
-        bool max_lift = trP < pomdp_pth && pomdp_pth > 0.0f;
-        init_actions(max_lift || pomdp_delta_mode);
+        _pomdp_mode = trP < pomdp_pth && pomdp_pth > 0.0f ? POMPD_MODE_EXPLOIT : POMPD_MODE_EXPLORE;
+        init_actions(_pomdp_mode==POMPD_MODE_EXPLOIT || pomdp_delta_mode);
         int extend = 0;
         _n_action_samples = pomdp_hori * pomdp_k;
 
-        if (max_lift)
+        if (_pomdp_mode==POMPD_MODE_EXPLOIT)
         {
             extend = pomdp_extend;
             _n_action_samples = MIN(MAX_ACTION_SAMPLES, int(pomdp_hori * pomdp_k * extend));
@@ -324,7 +324,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         int n_samples = pomdp_n;
         float step_w = 1.0f;
 
-        if (max_lift && pomdp_plan_mode)
+        if (_pomdp_mode==POMPD_MODE_EXPLOIT && pomdp_plan_mode)
         {
             n_samples = 1;
             step_w = 1.0f / pomdp_n;
@@ -333,18 +333,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         _solver.generate_action_paths(aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()), degrees(_sc->get_rate()), _pomdp_roll_cmd, pomdp_k, _n_actions, _roll_cmds,
             pomdp_step_t * step_w, pomdp_hori, float(I_moment), float(k_aileron), float(k_roll_damping), float(c_lp), extend);
         _m = 0;
-        _solver.init_step(pomdp_loop_load, n_samples, _sc->_ekf.X, _sc->_ekf.P, _sc->_ekf.Q, _sc->_ekf.R, _weights, max_lift);
-
-        if (max_lift)
-        {
-            _pomdp_mode = 1;
-            //gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDP maxlift %f",(double)trP);
-        }
-        else
-        {
-            _pomdp_mode = 0;
-            //gcs().send_text(MAV_SEVERITY_INFO, "Soaring: POMDP explore %f",(double)trP);
-        }
+        _solver.init_step(pomdp_loop_load, n_samples, _sc->_ekf.X, _sc->_ekf.P, _sc->_ekf.Q, _sc->_ekf.R, _weights, _pomdp_mode==POMPD_MODE_EXPLOIT);
 
         _prev_pomdp_update_time = AP_HAL::micros64();
         _prev_pomdp_action = action;
@@ -367,7 +356,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
             _pomdp_wp.lat,
             _pomdp_wp.lng,
             (double)_pomdp_roll_cmd,
-            (uint8_t)max_lift,
+            (uint8_t)_pomdp_mode,
             (double)_solver.get_action_Q(action));
         DataFlash_Class::instance()->Log_Write("POMT", "TimeUS,loop_min,loop_max,loop_time,solve_time,load,n,k", "QQQQQQHHH",
             AP_HAL::micros64(),
