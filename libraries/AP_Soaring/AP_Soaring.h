@@ -124,4 +124,5 @@ public:
     float get_eas2tas() const;
     void get_heading_estimate(float *hdx, float *hdy) const;
     void get_velocity_estimate(float dt, float *v0) const;
+    bool is_controlling_roll();
 };

@@ -486,6 +486,12 @@ void SoaringController::get_altitude_wrt_home(float *alt) const
     *alt *= -1.0f;
 }
 
+bool SoaringController::is_controlling_roll()
+{
+    // Only the POMDP algorithm sets target roll directly.
+    // The other method uses waypoints and the built-in navigation controller.
+    return pomdp_on;
+}
 
 bool SoaringController::is_set_to_continue_past_thermal_locking_period()
 {

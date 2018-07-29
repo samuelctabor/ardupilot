@@ -722,10 +722,6 @@ void Plane::update_flight_mode(void)
     case FLY_BY_WIRE_B:
         // Thanks to Yury MonZon for the altitude limit code!
         nav_roll_cd = channel_roll->norm_input() * roll_limit_cd;
-        // for soaring_controler POMDP steering
-        if (g2.soaring_controller.POMDSoar_active()) {
-            nav_roll_cd = g2.soaring_controller.get_roll_cmd();
-        }
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
         update_load_factor();
         update_fbwb_speed_height();
