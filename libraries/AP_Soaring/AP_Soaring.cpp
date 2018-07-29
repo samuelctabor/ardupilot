@@ -450,7 +450,12 @@ void SoaringController::init_thermalling()
     _ahrs.get_position(_prev_update_location);
     _prev_update_time = AP_HAL::micros64();
     _thermal_start_time_us = AP_HAL::micros64();
-    _pomdsoar.init_thermalling();
+
+    if (pomdp_on) {
+        _pomdsoar.init_thermalling();
+    } else {
+        init_ekf();
+    }
 }
 
 void SoaringController::init_cruising()
