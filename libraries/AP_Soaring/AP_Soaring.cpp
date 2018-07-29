@@ -436,24 +436,17 @@ bool SoaringController::check_cruise_criteria()
     float thermalability = -1e6;
     float alt = _vario.alt;
 
-    if (pomdp_on && (exit_mode == 1 || exit_mode == 2))
-    {
+    if (pomdp_on && (exit_mode == 1 || exit_mode == 2)) {
         thermalability = _pomdsoar.assess_thermalability(uint8_t(exit_mode));
-    } 
-    else 
-    {
+    } else {
         _loiter_rad = _aparm.loiter_radius;
         thermalability = (_ekf.X[0] * expf(-powf(_loiter_rad / _ekf.X[1], 2))) - EXPECTED_THERMALLING_SINK;
     }
 
-    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt))
-    {
-        gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: w %f W %f R %f", (double)thermalability, (double)_ekf.X[0], (double)_ekf.X[1]);
-        gcs().send_text(MAV_SEVERITY_INFO, "Thml weak: th %f alt %f Mc %f", (double)thermalability, (double)alt, (double)McCready(alt));
+    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Thermal weak, recommend quitting: W %f R %f th %f alt %f Mc %f\n", (double)_ekf.X[0], (double)_ekf.X[1], (double)thermalability, (double)alt, (double)McCready(alt));
         return true;
-    } 
-    else if (soar_active && (alt>alt_max || alt<alt_min))
-    {
+    } else if (soar_active && (alt>alt_max || alt<alt_min)) {
         gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise. Alt = %f\n", (double)alt);
         return true;
     }
@@ -474,10 +467,10 @@ void SoaringController::init_ekf()
     float r = powf(thermal_r, 2);
     float cov_q1 = powf(thermal_q1, 2); // State covariance
     float cov_q2 = powf(thermal_q2, 2); // State covariance
-    const float init_q[4] = { cov_q1, cov_q2, cov_q2, cov_q2 };
-    const MatrixN<float, 4> q{ init_q };
-    const float init_p[4] = { INITIAL_STRENGTH_COVARIANCE, INITIAL_RADIUS_COVARIANCE, INITIAL_POSITION_COVARIANCE, INITIAL_POSITION_COVARIANCE };
-    const MatrixN<float, 4> p{ init_p };
+    const float init_q[4] = {cov_q1, cov_q2, cov_q2, cov_q2};
+    const MatrixN<float, 4> q{init_q};
+    const float init_p[4] = {INITIAL_STRENGTH_COVARIANCE, INITIAL_RADIUS_COVARIANCE, INITIAL_POSITION_COVARIANCE, INITIAL_POSITION_COVARIANCE};
+    const MatrixN<float, 4> p{init_p};
     float ground_course = radians(_ahrs.get_gps().ground_course());
     float head_sin = sinf(ground_course); //sinf(_ahrs.yaw);
     float head_cos = cosf(ground_course); //cosf(_ahrs.yaw);
@@ -518,7 +511,7 @@ void SoaringController::init_ekf()
 
 void SoaringController::init_thermalling()
 {
-    get_position(_prev_update_location);
+    _ahrs.get_position(_prev_update_location);
     _prev_update_time = AP_HAL::micros64();
     _thermal_start_time_us = AP_HAL::micros64();
     _pomdsoar.init_thermalling();
@@ -546,7 +539,6 @@ void SoaringController::get_wind_corrected_drift(const Location *current_loc, co
     *dy -= *wind_drift_y;
 }
 
-
 void SoaringController::get_altitude_wrt_home(float *alt) const
 {
     _ahrs.get_relative_position_D_home(*alt);
@@ -561,7 +553,7 @@ bool SoaringController::is_set_to_continue_past_thermal_locking_period()
 void SoaringController::update_thermalling()
 {
     struct Location current_loc;
-    get_position(current_loc);
+    _ahrs.get_position(current_loc);
 
     if (soar_active
         && pomdp_on
@@ -570,13 +562,10 @@ void SoaringController::update_thermalling()
     {
         bool is_ok_to_stop = _pomdsoar.update_thermalling(current_loc);
 
-        if (is_ok_to_stop && check_cruise_criteria())
-        {
+        if (is_ok_to_stop && check_cruise_criteria()) {
             _pomdsoar.stop_computations();
         }
-    }
-    else 
-    {
+    } else {
         _pomdsoar.stop_computations();
     }
 
@@ -603,7 +592,9 @@ void SoaringController::update_thermalling()
                                                (double)_vario.alt,
                                                (double)dx_w,
                                                (double)dy_w);
-        _ekf.update(_vario.reading, dx, dy);     // update the filter
+
+        //log_data();
+        _ekf.update(_vario.reading,dx, dy);       // update the filter
         _prev_update_location = current_loc;      // save for next time
         _prev_update_time = AP_HAL::micros64();
         _vario.new_data = false;
@@ -735,7 +726,7 @@ float SoaringController::get_aspd() const
         {
             aspd = 0.5f*(_aparm.airspeed_min + _aparm.airspeed_max);
         }
-    } 
+    }
     else if (aspd_src == 1)
     {
         aspd = _wind_corrected_gspd;
