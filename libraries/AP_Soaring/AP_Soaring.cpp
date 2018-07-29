@@ -320,13 +320,9 @@ SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, co
 
 void SoaringController::get_target(Location &wp)
 {
-    if (_pomdsoar.are_computations_in_progress()) {
-        // Do nothing -- POMDSoar doesn't use waypoints, and doesn't modify them. Therefore, don't change wp's value
-    }
-    else {
-        wp = _prev_update_location;
-        location_offset(wp, _ekf.X[2], _ekf.X[3]);
-    }
+    // Set waypoint regardless of whether its used. This way estimated thermal is shown on GCS.
+    wp = _prev_update_location;
+    location_offset(wp, _ekf.X[2], _ekf.X[3]);
 }
 
 bool SoaringController::suppress_throttle()
@@ -372,7 +368,7 @@ bool SoaringController::check_cruise_criteria()
         thermalability = (_ekf.X[0] * expf(-powf(_loiter_rad / _ekf.X[1], 2))) - EXPECTED_THERMALLING_SINK;
     }
 
-    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt) && _pomdsoar.ok_to_stop()) {
+    if (soar_active && !is_in_thermal_locking_period() && thermalability < McCready(alt) && _pomdsoar.ok_to_stop()) {
         gcs().send_text(MAV_SEVERITY_INFO, "Thermal weak, recommend quitting: W %f R %f th %f alt %f Mc %f\n", (double)_ekf.X[0], (double)_ekf.X[1], (double)thermalability, (double)alt, (double)McCready(alt));
         return true;
     } else if (soar_active && (alt>alt_max || alt<alt_min)) {
