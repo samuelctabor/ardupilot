@@ -476,6 +476,7 @@ void Plane::set_mode(enum FlightMode mode, mode_reason_t reason)
 			g2.soaring_controller.init_thermalling();
 			g2.soaring_controller.get_target(next_WP_loc); // ahead on flight path
 		}
+		
         break;
 
     case AVOID_ADSB:
@@ -489,7 +490,6 @@ void Plane::set_mode(enum FlightMode mode, mode_reason_t reason)
         */
         guided_WP_loc = current_loc;
         set_guided_WP();
-        g2.soaring_controller.init_cruising();
         break;
 
     case QSTABILIZE:
