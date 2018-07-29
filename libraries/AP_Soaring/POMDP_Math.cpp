@@ -2,7 +2,7 @@
 // Licensed under the GPLv3 license
 
 #include <stdint.h>
-#include "random.h"
+#include "POMDP_Math.h"
 #include <cmath>
 
 

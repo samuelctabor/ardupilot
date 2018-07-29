@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved. 
 // Licensed under the GPLv3 license
 
-#ifndef PomdpSolver_h
-#define PomdpSolver_h
+#pragma once
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include "ExtendedKalmanFilter.h"
-#include "random.h"
+#include "POMDP_Math.h"
 #include <AP_Math/matrixN.h>
 
 
@@ -150,5 +149,3 @@ public:
     int actions_generated() { return _generate_actions ? _m : _nactions; }
     float samp_count;
 };
-
-#endif /* PomdpSolver_h */

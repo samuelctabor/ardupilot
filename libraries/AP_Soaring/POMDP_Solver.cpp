@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved. 
 // Licensed under the GPLv3 license
 
-#include "PomdpSolver.h"
+#include "POMDP_Solver.h"
 #include <GCS_MAVLink/GCS.h>
 
 #define EKF_FAST_MATH

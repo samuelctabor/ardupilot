@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved. 
 // Licensed under the GPLv3 license
 
-#ifndef random_h
-#define random_h
+#pragma once
 #include <stdint.h>
 
 #define XSADD_FLOAT_MUL (1.0f / 16777216.0f)
@@ -20,4 +19,3 @@ void multivariate_normal_fill(float (&samp)[MAX_GAUSS_SAMPLES][4], float (&mean)
 void multivariate_normal(float (&samp)[4], float (&mean)[4], float (&cov)[4][4]);
 
 extern uint32_t s0[];
-#endif /* random_h */

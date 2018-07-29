@@ -3,7 +3,7 @@
 
 #include <GCS_MAVLink/GCS.h>
 #include "AP_Soaring.h"
-#include "POMDSoar.h"
+#include "POMDP_Soar.h"
 
 // ArduSoar parameters
 const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {

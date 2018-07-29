@@ -4,7 +4,7 @@
 #pragma once
 
 #include <APM_Control/APM_Control.h>
-#include "PomdpSolver.h"
+#include "POMDP_Solver.h"
 class SoaringController;
 
 enum POMDP_Mode

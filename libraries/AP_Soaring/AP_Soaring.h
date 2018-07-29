@@ -18,7 +18,7 @@
 #include "ExtendedKalmanFilter.h"
 #include "Variometer.h"
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
-#include "POMDSoar.h"
+#include "POMDP_Soar.h"
 
 #define EXPECTED_THERMALLING_SINK 0.7
 #define INITIAL_THERMAL_STRENGTH 2.0
