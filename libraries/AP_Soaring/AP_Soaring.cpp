@@ -555,22 +555,6 @@ void SoaringController::get_velocity_estimate(float dt, float *v0) const
 void SoaringController::update_vario()
 {
     _vario.update(polar_K, polar_CD0, polar_B);
-
-    // Fill EKF buffer for eventual action on thermal trigger.
-    struct Location current_loc;
-    get_position(current_loc);
-
-    float dx = 0;
-    float dy = 0;
-    float dx_w = 0;
-    float dy_w = 0;
-    Vector3f wind = _ahrs.wind_estimate();
-    get_wind_corrected_drift(&current_loc, &wind, &dx_w, &dy_w, &dx, &dy);
-
-    _ekf_buffer[_ptr][0] = _vario.reading;
-    _ekf_buffer[_ptr][1] = dx;
-    _ekf_buffer[_ptr][2] = dy;
-    _ptr = (_ptr + 1) % EKF_MAX_BUFFER_SIZE;
 }
 
 

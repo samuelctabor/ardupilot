@@ -26,7 +26,6 @@
 #define INITIAL_STRENGTH_COVARIANCE 0.0049
 #define INITIAL_RADIUS_COVARIANCE 2500.0
 #define INITIAL_POSITION_COVARIANCE 300.0
-#define EKF_MAX_BUFFER_SIZE 300
 #define SOARING_RND_UPDATE_RATE 20 // 260 microseconds of Box Miller 4D rnd samples
 
 
@@ -54,9 +53,6 @@ class SoaringController {
 
     float _loiter_rad;
     bool _throttle_suppressed;
-    float _ekf_buffer[EKF_MAX_BUFFER_SIZE][3];
-    unsigned _ptr = 0; // index into the _ekf_buffer
-    float _wind_corrected_gspd = 0.01;
     float correct_netto_rate(float climb_rate, float phi, float aspd) const;
     float McCready(float alt);
     void get_wind_corrected_drift(const Location *current_loc, const Vector3f *wind, float *wind_drift_x, float *wind_drift_y, float *dx, float *dy);
