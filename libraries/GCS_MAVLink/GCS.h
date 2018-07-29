@@ -73,8 +73,6 @@ enum ap_message {
     MSG_ADSB_VEHICLE,
     MSG_BATTERY_STATUS,
     MSG_AOA_SSA,
-    // MSG_SOAR_TEST_OUT,
-    // MSG_SOAR_STATUS,
     MSG_LANDING,
     MSG_RETRY_DEFERRED // this must be last
 };

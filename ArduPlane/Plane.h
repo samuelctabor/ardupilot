@@ -820,8 +820,6 @@ private:
     void send_current_waypoint(mavlink_channel_t chan);
 
     void send_aoa_ssa(mavlink_channel_t chan);
-    void send_soar_status(mavlink_channel_t chan);
-    void send_soar_test_out(mavlink_channel_t chan);
 
     void gcs_data_stream_send(void);
     void gcs_update(void);
