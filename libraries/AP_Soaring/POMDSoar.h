@@ -7,10 +7,10 @@
 #include "PomdpSolver.h"
 class SoaringController;
 
-enum POMPD_Mode
+enum POMDP_Mode
 {
-    POMPD_MODE_EXPLORE = 0,
-    POMPD_MODE_EXPLOIT = 1
+    POMDP_MODE_EXPLORE = 0,
+    POMDP_MODE_EXPLOIT = 1
 };
 
 //
@@ -42,7 +42,7 @@ private:
     int _j = 0;
     int _n_action_samples;
     bool _new_actions_to_send = false;
-    POMPD_Mode _pomdp_mode = POMPD_MODE_EXPLORE;
+    POMDP_Mode _pomdp_mode = POMDP_MODE_EXPLORE;
     float _weights[4] = { 1, 1, 1, 1 };
     uint8_t _prev_run_timing_test;
 
@@ -54,7 +54,6 @@ private:
     PomdpSolver _solver;
     const SoaringController *_sc;
 
-    AP_Int8 pomdp_delta_mode;
     AP_Int16 pomdp_n;
     AP_Int16 pomdp_k;
     AP_Float pomdp_hori;
@@ -73,7 +72,7 @@ private:
     AP_Int8 pomdp_plan_mode;
     AP_Float pomdp_pth;
 
-    void init_actions(bool mode);
+    void init_actions(POMDP_Mode mode);
 
 public:
     POMDSoarAlgorithm(const SoaringController *sc, AP_RollController &rollController, AP_Float &scaling_speed);

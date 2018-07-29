@@ -14,46 +14,48 @@ POMDSoarAlgorithm::POMDSoarAlgorithm(const SoaringController *sc, AP_RollControl
 }
 
 
-void POMDSoarAlgorithm::init_actions(bool mode)
+void POMDSoarAlgorithm::init_actions(POMDP_Mode mode)
 {
     _n_actions = MIN(pomdp_n_actions, MAX_ACTIONS);
     float max_roll = fmax(pomdp_roll1 * _sign, pomdp_roll2 * _sign);
     float min_roll = fmin(pomdp_roll1 * _sign, pomdp_roll2 * _sign);
 
-    if (mode)
-    {
-        float new_max_roll = _pomdp_roll_cmd + pomdp_roll_rate;
-        float new_min_roll = _pomdp_roll_cmd - pomdp_roll_rate;
-
-        if (new_max_roll > max_roll)
+    switch (mode) {
+        case POMDP_MODE_EXPLOIT:
         {
-            new_max_roll = max_roll;
-            new_min_roll = max_roll - 2 * pomdp_roll_rate;
-        }
+            float new_max_roll = _pomdp_roll_cmd + pomdp_roll_rate;
+            float new_min_roll = _pomdp_roll_cmd - pomdp_roll_rate;
 
-        if (new_min_roll < min_roll)
-        {
-            new_min_roll = min_roll;
-            new_max_roll = min_roll + 2 * pomdp_roll_rate;
-        }
+            if (new_max_roll > max_roll)
+            {
+                new_max_roll = max_roll;
+                new_min_roll = max_roll - 2 * pomdp_roll_rate;
+            }
 
-        float roll = new_max_roll;
-        float roll_rate = (new_max_roll - new_min_roll) / (_n_actions - 1);
-        for (int i = 0; i < _n_actions; i++) {
-            _roll_cmds[i] = roll;
-            //gcs().send_text(MAV_SEVERITY_INFO, "Action[%d] %f", i, (double)_roll_cmds[i]);
-            roll -= roll_rate;
+            if (new_min_roll < min_roll)
+            {
+                new_min_roll = min_roll;
+                new_max_roll = min_roll + 2 * pomdp_roll_rate;
+            }
+
+            float roll = new_max_roll;
+            float roll_rate = (new_max_roll - new_min_roll) / (_n_actions - 1);
+            for (int i = 0; i < _n_actions; i++) {
+                _roll_cmds[i] = roll;
+                //gcs().send_text(MAV_SEVERITY_INFO, "Action[%d] %f", i, (double)_roll_cmds[i]);
+                roll -= roll_rate;
+            }
         }
-    }
-    else
-    {
-        float roll = max_roll;
-        float roll_rate = (max_roll - min_roll) / (_n_actions - 1);
-        for (int i = 0; i < _n_actions; i++)
+        case POMDP_MODE_EXPLORE:
         {
-            _roll_cmds[i] = roll;
-            //gcs().send_text(MAV_SEVERITY_INFO, "Action[%d] %f", i, (double)_roll_cmds[i]);
-            roll -= roll_rate;
+            float roll = max_roll;
+            float roll_rate = (max_roll - min_roll) / (_n_actions - 1);
+            for (int i = 0; i < _n_actions; i++)
+            {
+                _roll_cmds[i] = roll;
+                //gcs().send_text(MAV_SEVERITY_INFO, "Action[%d] %f", i, (double)_roll_cmds[i]);
+                roll -= roll_rate;
+            }
         }
     }
 
@@ -69,7 +71,7 @@ void POMDSoarAlgorithm::init_thermalling()
     float xprod = _sc->_ekf.X[3] * head_cos - _sc->_ekf.X[2] * head_sin;
     _sign = xprod <= 0 ? -1.0 : 1.0;
     _pomdp_roll_cmd = pomdp_roll1 * _sign;
-    init_actions(pomdp_delta_mode);
+    init_actions(POMDP_MODE_EXPLORE);
     float aspd = _sc->get_aspd();
     float eas2tas = _sc->get_eas2tas();
     // This assumes that SoaringController called get_position(_prev_update_location) right before this call to init_thermalling
@@ -94,7 +96,7 @@ void POMDSoarAlgorithm::init_thermalling()
     _prev_pomdp_update_time = _sc->_thermal_start_time_us;
     _prev_pomdp_wp = _sc->_prev_update_location;
     _pomdp_active = true;
-    _pomdp_mode = POMPD_MODE_EXPLORE;
+    _pomdp_mode = POMDP_MODE_EXPLORE;
     _prev_pomdp_action = _sign > 0 ? _n_actions - 1 : 0;
 }
 
@@ -310,12 +312,16 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         }
 
         float trP = _sc->_ekf.P(0, 0) / n[0] + _sc->_ekf.P(1, 1) / n[1] + _sc->_ekf.P(2, 2) / n[2] + _sc->_ekf.P(3, 3) / n[3];
-        _pomdp_mode = trP < pomdp_pth && pomdp_pth > 0.0f ? POMPD_MODE_EXPLOIT : POMPD_MODE_EXPLORE;
-        init_actions(_pomdp_mode==POMPD_MODE_EXPLOIT || pomdp_delta_mode);
+
+        // Update the correct mode (exploit vs explore) based on EKF covariance trace
+        _pomdp_mode = trP < pomdp_pth && pomdp_pth > 0.0f ? POMDP_MODE_EXPLOIT : POMDP_MODE_EXPLORE;
+        
+        // Initialise actions accordingly.
+        init_actions(_pomdp_mode);
         int extend = 0;
         _n_action_samples = pomdp_hori * pomdp_k;
 
-        if (_pomdp_mode==POMPD_MODE_EXPLOIT)
+        if (_pomdp_mode==POMDP_MODE_EXPLOIT)
         {
             extend = pomdp_extend;
             _n_action_samples = MIN(MAX_ACTION_SAMPLES, int(pomdp_hori * pomdp_k * extend));
@@ -324,7 +330,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         int n_samples = pomdp_n;
         float step_w = 1.0f;
 
-        if (_pomdp_mode==POMPD_MODE_EXPLOIT && pomdp_plan_mode)
+        if (_pomdp_mode==POMDP_MODE_EXPLOIT && pomdp_plan_mode)
         {
             n_samples = 1;
             step_w = 1.0f / pomdp_n;
@@ -333,7 +339,7 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
         _solver.generate_action_paths(aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()), degrees(_sc->get_rate()), _pomdp_roll_cmd, pomdp_k, _n_actions, _roll_cmds,
             pomdp_step_t * step_w, pomdp_hori, float(I_moment), float(k_aileron), float(k_roll_damping), float(c_lp), extend);
         _m = 0;
-        _solver.init_step(pomdp_loop_load, n_samples, _sc->_ekf.X, _sc->_ekf.P, _sc->_ekf.Q, _sc->_ekf.R, _weights, _pomdp_mode==POMPD_MODE_EXPLOIT);
+        _solver.init_step(pomdp_loop_load, n_samples, _sc->_ekf.X, _sc->_ekf.P, _sc->_ekf.Q, _sc->_ekf.R, _weights, _pomdp_mode==POMDP_MODE_EXPLOIT);
 
         _prev_pomdp_update_time = AP_HAL::micros64();
         _prev_pomdp_action = action;
