@@ -89,11 +89,6 @@ void POMDSoarAlgorithm::init_thermalling()
     if (_sc->aspd_cmd > 0)
     {
         pomdp_aspd = _sc->aspd_cmd;
-
-        if (_sc->aspd_src == 2)
-        {
-            pomdp_aspd -= _sc->_wind_ekf.X[0]; // correct for sensor bias using wind ekf
-        }
     }
 
     _solver.generate_action_paths(pomdp_aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()),
@@ -345,10 +340,6 @@ bool POMDSoarAlgorithm::update_thermalling(const Location &current_loc)
 
         if (_sc->aspd_cmd > 0) {
             pomdp_aspd = _sc->aspd_cmd;
-
-            if (_sc->aspd_src == 2) {
-                pomdp_aspd -= _sc->_wind_ekf.X[0]; // correct for sensor bias using wind ekf
-            }
         }
 
         _solver.generate_action_paths(pomdp_aspd, eas2tas, wind_corrected_heading, degrees(_sc->get_roll()), degrees(_sc->get_rate()), _pomdp_roll_cmd, pomdp_k, _n_actions, _roll_cmds,

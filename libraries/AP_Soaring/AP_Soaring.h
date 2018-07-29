@@ -18,7 +18,6 @@
 #include "ExtendedKalmanFilter.h"
 #include "Variometer.h"
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
-#include "WindExtendedKalmanFilter.h"
 #include "POMDSoar.h"
 
 #define EXPECTED_THERMALLING_SINK 0.7
@@ -36,7 +35,6 @@ class SoaringController {
     friend class POMDSoarAlgorithm;
 
     ExtendedKalmanFilter _ekf{};
-    WindExtendedKalmanFilter _wind_ekf{};
     AP_AHRS &_ahrs;
     AP_SpdHgtControl &_spdHgt;
     const AP_Vehicle::FixedWing &_aparm;
@@ -86,9 +84,7 @@ protected:
     AP_Float poly_a;
     AP_Float poly_b;
     AP_Float poly_c;
-    AP_Int8 aspd_src;
     AP_Int8 exit_mode;
-    AP_Int8 disable_soar_prevention;
     AP_Int8 gps_sync;
     AP_Float aspd_cmd;
 

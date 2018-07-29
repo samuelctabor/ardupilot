@@ -157,14 +157,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_HORI", 19, SoaringController, _pomdsoar.pomdp_hori, 4.0),
 
-    // @Param: GPS_SYNC
-    // @DisplayName: Enable synchronization between vario updates and GPS updates.
-    // @Description: Enable synchronization between vario updates and GPS updates. 0 = off, 1 = sync vario update with GPS update.
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("GPS_SYNC", 21, SoaringController, gps_sync, 1),
-
     // @Param: POMDP_STEP_T
     // @DisplayName:POMDP planning step solve time
     // @Description: The amount of computation time the POMDP solver has for computing the next action
@@ -277,14 +269,6 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("POMDP_PTH", 37, SoaringController, _pomdsoar.pomdp_pth, 50),
 
-    // @Param: ASPD_SRC
-    // @DisplayName: Airspeed source
-    // @Description: 0 = airspeed sensor, 1 = wind corrected ground speed
-    // @Units:
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("ASPD_SRC", 38, SoaringController, aspd_src, 1),
-
     // @Param: EXIT_MODE
     // @DisplayName: Thermal exit mode
     // @Description: Thermal exit mode. 0 = ArduSoar, 1 (recommended) or 2 = POMDP. It's possible to use ArduSoar's thermal exit mode with POMDSoar, but ArduSoar can only use its own thermal exit mode, 0.
@@ -340,11 +324,6 @@ SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, co
 {
     AP_Param::setup_object_defaults(this, var_info);
     _prev_update_time = AP_HAL::micros64();
-    VectorN<float, 3> X = (const float[]) { 0, 0, 0 };
-    MatrixN<float, 3> P = (const float[]) { 0.5, 0.5, 0.5 };
-    MatrixN<float, 3> Q = (const float[]) { 0.0001, 0.001, 0.001 };
-    float R = 0.5;
-    _wind_ekf.reset(X, P, Q, R);
 }
 
 void SoaringController::get_target(Location &wp)
@@ -668,25 +647,9 @@ float SoaringController::get_aspd() const
     // initialize to an obviously invalid value, which should get overwritten.
     float aspd = -100.0f;
 
-    if (aspd_src == 0)
+    if (!_ahrs.airspeed_estimate(&aspd))
     {
-        if (!_ahrs.airspeed_estimate(&aspd))
-        {
-            aspd = 0.5f*(_aparm.airspeed_min + _aparm.airspeed_max);
-        }
-    }
-    else if (aspd_src == 1)
-    {
-        aspd = _wind_corrected_gspd;
-    }
-    else if (aspd_src == 2)
-    {
-        if (!_ahrs.airspeed_estimate(&aspd))
-        {
-            aspd = _aparm.airspeed_cruise_cm / 100.0f;
-        }
-
-        aspd -= _wind_ekf.X[0]; // correct sensor aspd for estimated bias
+        aspd = 0.5f*(_aparm.airspeed_min + _aparm.airspeed_max);
     }
 
     return aspd;
