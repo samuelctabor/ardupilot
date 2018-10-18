@@ -45,7 +45,6 @@ SilentWings::SilentWings(const char *home_str, const char *frame_str) :
 */
 void SilentWings::send_servos(const struct sitl_input &input)
 {
-    /*
     char *buf = nullptr;
     float aileron  = filtered_servo_angle(input, 0);
     float elevator = filtered_servo_angle(input, 1);
@@ -75,7 +74,6 @@ void SilentWings::send_servos(const struct sitl_input &input)
     if (sent < buflen) {
         fprintf(stderr, "Failed to send all bytes on control socket\n");
     }
-    */
 
 }
 
@@ -101,15 +99,8 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     if (nread!=132) {
         return;
     }
-    printf("Received %i\n", nread);    
-
-    //while (nread == 0) {
-    //    send_servos(input);
-    //    nread = sock.recv(&pkt, sizeof(pkt), 100);
-    //    printf("Received %i\n", nread);
-    //}
     
-    memcpy(&pkt,      &pkt_tmp,    2); // timestamp
+    memcpy(&pkt,      &pkt_tmp,    132);
 
     // The order of bytes in the doubles is incorrect.
     float* addr_tmp = (float*)&pkt_tmp + 2;
@@ -118,28 +109,27 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     addr[1] = addr_tmp[0];
     addr[2] = addr_tmp[3];
     addr[3] = addr_tmp[2];
-
     
-    memcpy((char*)(&pkt)+24, (char*)(&pkt_tmp)+24, 112); // the rest
-    
-
-    //TEMP
-    //memset(&pkt,     0, sizeof(pkt));
     // auto-adjust to crrcsim frame rate
-    double deltat = (double)((pkt.timestamp - last_timestamp) % 65535)/1000.0f;
+    double deltat = (pkt.timestamp - last_timestamp)/1000.0f;
 
     if (deltat>100000.0) {
+        printf("dt too large!\n");
+        last_timestamp = pkt.timestamp;
         return;
     }
 
     accel_body = Vector3f(pkt.ax, pkt.ay, -pkt.az - GRAVITY_MSS);
+
+    Vector3f accel_earth_tmp = dcm*accel_body + Vector3f(0,0,GRAVITY_MSS);
+    accel_body = dcm.transposed()*accel_earth_tmp;
+
     gyro = Vector3f(radians(pkt.d_roll), radians(pkt.d_pitch), radians(pkt.d_yaw));
     
-
     loc2.lat = pkt.position_latitude * 1.0e7;
     loc2.lng = pkt.position_longitude * 1.0e7;
 
-    if (loc1.lat==0.0f) {
+    if (fabs(loc1.lat) < 1.0e-6) {
         printf("Resetting home");
         loc1.lat = loc2.lat;
         loc1.lng = loc2.lng;
@@ -148,7 +138,7 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     Vector2f posdelta = location_diff(loc1, loc2);
     position.x = posdelta.x;
     position.y = posdelta.y;
-    position.z = -pkt.altitude_ground;
+    position.z = pkt.altitude_msl;
 
     airspeed = pkt.v_eas;
     airspeed_pitot = pkt.v_eas;
@@ -160,8 +150,7 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     time_now_us += deltat * 1.0e6;
 
     if (0) {
-        printf("Delta: %f Time: %f\n", deltat, time_now_us);
-
+        printf("Delta: %f Time: %" PRIu64 "\n", deltat, time_now_us);
         printf("Accel.x %f\n", accel_body.x);
         printf("Accel.y %f\n", accel_body.y);
         printf("Accel.z %f\n", accel_body.z);
