@@ -46,7 +46,6 @@ SilentWings::SilentWings(const char *home_str, const char *frame_str) :
 */
 void SilentWings::send_servos(const struct sitl_input &input)
 {
-    /*
     char *buf = nullptr;
     float aileron  = filtered_servo_angle(input, 0);
     float elevator = filtered_servo_angle(input, 1);
@@ -76,8 +75,6 @@ void SilentWings::send_servos(const struct sitl_input &input)
     if (sent < buflen) {
         fprintf(stderr, "Failed to send all bytes on control socket\n");
     }
-    */
-
 }
 
 /*
