@@ -45,7 +45,7 @@ private:
     /*
       reply packet sent from SilentWings to ArduPilot
      */
-    struct fdm_packet {
+    struct PACKED fdm_packet {
            unsigned int timestamp;          // Millisec  Timestamp
            double position_latitude;        // Degrees   Position latitude,
            double position_longitude;       // Degrees            longitude,
