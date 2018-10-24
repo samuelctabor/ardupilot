@@ -85,119 +85,13 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
 {
     fdm_packet pkt;
     memset(&pkt, 0, sizeof(pkt));
-    const unsigned int *data_ui = nullptr;
-    const float *data_f = nullptr;
-    const double *data_d = nullptr;
-    uint8_t raw_pkt[PKT_LEN];
     
-    /*
-      we re-send the servo packet every 0.1 seconds until we get a
-      reply. This allows us to cope with some packet loss to the FDM
-     */
-    //while (sock.recv(&pkt, sizeof(pkt), 100) != sizeof(pkt)) {
-    //uint8_t nread = sock.recv(&pkt_tmp, sizeof(pkt_tmp), 0);
-    
-    uint8_t nread = sock.recv(&raw_pkt, PKT_LEN, 0);
+    uint8_t nread = sock.recv(&pkt, PKT_LEN, 0);
     
     if (nread != PKT_LEN) {
         return;
-    }
-    
-    // printf("Received %i bytes\n", nread); 
-
-    data_ui = (const unsigned int*)&raw_pkt[TIMESTAMP_OFFSET];
-    pkt.timestamp = *data_ui;
-    
-    data_d = (const double*)&raw_pkt[LAT_OFFSET];
-    pkt.position_latitude = *data_d;
-    
-    data_d = (const double*)&raw_pkt[LON_OFFSET];
-    pkt.position_longitude = *data_d;
-    
-    data_f = (const float*)&raw_pkt[ALT_MSL_OFFSET];
-    pkt.altitude_msl = *data_f;
-    
-    data_f = (const float*)&raw_pkt[ALT_GND_OFFSET];
-    pkt.altitude_ground = *data_f;
-    
-    data_f = (const float*)&raw_pkt[ALT_GND_45_OFFSET];
-    pkt.altitude_ground_45 = *data_f;
-    
-    data_f = (const float*)&raw_pkt[ALT_GND_FWD_OFFSET];
-    pkt.altitude_ground_forward = *data_f;
-    
-    data_f = (const float*)&raw_pkt[ROLL_OFFSET];
-    pkt.roll = *data_f;
-    
-    data_f = (const float*)&raw_pkt[PITCH_OFFSET];
-    pkt.pitch = *data_f;
-    
-    data_f = (const float*)&raw_pkt[YAW_OFFSET];
-    pkt.yaw = *data_f;
-    
-    data_f = (const float*)&raw_pkt[D_ROLL_OFFSET];
-    pkt.d_roll = *data_f;
-    
-    data_f = (const float*)&raw_pkt[D_PITCH_OFFSET];
-    pkt.d_pitch = *data_f;
-    
-    data_f = (const float*)&raw_pkt[D_YAW_OFFSET];
-    pkt.d_yaw = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VX_OFFSET];
-    pkt.vx = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VY_OFFSET];
-    pkt.vy = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VZ_OFFSET];
-    pkt.vz = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VX_WIND_OFFSET];
-    pkt.vx_wind = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VY_WIND_OFFSET];
-    pkt.vy_wind = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VZ_WIND_OFFSET];
-    pkt.vz_wind = *data_f;
-    
-    data_f = (const float*)&raw_pkt[V_EAS_OFFSET];
-    pkt.v_eas = *data_f;
-    
-    data_f = (const float*)&raw_pkt[AX_OFFSET];
-    pkt.ax = *data_f;
-    
-    data_f = (const float*)&raw_pkt[AY_OFFSET];
-    pkt.ay = *data_f;
-    
-    data_f = (const float*)&raw_pkt[AZ_OFFSET];
-    pkt.az = *data_f;
-    
-    data_f = (const float*)&raw_pkt[AOA_OFFSET];
-    pkt.angle_of_attack = *data_f;
-    
-    data_f = (const float*)&raw_pkt[AS_OFFSET];
-    pkt.angle_sideslip = *data_f;
-    
-    data_f = (const float*)&raw_pkt[VARIO_OFFSET];
-    pkt.vario = *data_f;
-    
-    data_f = (const float*)&raw_pkt[HEADING_OFFSET];
-    pkt.heading = *data_f;
-    
-    data_f = (const float*)&raw_pkt[ROT_OFFSET];
-    pkt.rate_of_turn = *data_f;
-    
-    data_f = (const float*)&raw_pkt[AIRPRESSURE_OFFSET];
-    pkt.airpressure = *data_f;
-    
-    data_f = (const float*)&raw_pkt[DENSITY_OFFSET];
-    pkt.density = *data_f;
-    
-    data_f = (const float*)&raw_pkt[TEMP_OFFSET];
-    pkt.temperature = *data_f;
-    
+    }    
+   
     // auto-adjust to crrcsim frame rate
     // QUESION: Do we actually need this?
     double deltat = (pkt.timestamp - last_timestamp)/1000.0f;
