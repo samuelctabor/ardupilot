@@ -85,16 +85,6 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
 {
     fdm_packet pkt;
     memset(&pkt, 0, sizeof(pkt));
-    const unsigned int *data_ui = nullptr;
-    const float *data_f = nullptr;
-    const double *data_d = nullptr;
-    
-    /*
-      we re-send the servo packet every 0.1 seconds until we get a
-      reply. This allows us to cope with some packet loss to the FDM
-     */
-    //while (sock.recv(&pkt, sizeof(pkt), 100) != sizeof(pkt)) {
-    //uint8_t nread = sock.recv(&pkt_tmp, sizeof(pkt_tmp), 0);
     
     uint8_t nread = sock.recv(&pkt, PKT_LEN, 0);
     
