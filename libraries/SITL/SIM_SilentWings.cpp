@@ -28,7 +28,7 @@ namespace SITL {
 
 SilentWings::SilentWings(const char *home_str, const char *frame_str) :
     Aircraft(home_str, frame_str),
-    last_timestamp(0),
+    last_data_time_ms(0),
     sock(true),
     home_initialized(false)
 {
@@ -39,6 +39,17 @@ SilentWings::SilentWings(const char *home_str, const char *frame_str) :
 
     sock.reuseaddress();
     sock.set_blocking(false);
+    
+    // TO DO: Force ArduPlane to use sensor data from SilentWings as the actual state,
+    // without using EKF, i.e., using "fake EKF". Disable gyro calibration
+    // For some reason, setting these parameters succeeds but has no effect...
+    /*
+    AP_Param::set_default_by_name("AHRS_EKF_TYPE", 10);
+    AP_Param::set_default_by_name("EK2_ENABLE", 0);
+    AP_Param::set_default_by_name("INS_GYR_CAL", 0);
+    AP_Param::set_default_by_name("ARSPD_ENABLE", 1);
+    AP_Param::set_default_by_name("ARSPD_USE", 1);
+    */
 }
 
 /*
@@ -52,8 +63,7 @@ void SilentWings::send_servos(const struct sitl_input &input)
     float throttle = filtered_servo_range(input, 2);
     float rudder   = filtered_servo_angle(input, 3);
     float flap     = 0.0f;
-  
-    float wind_speed_fps = input.wind.speed / FEET_TO_METERS;
+
     asprintf(&buf,
              "AIL %f\n"
              "ELE %f\n"
@@ -67,6 +77,9 @@ void SilentWings::send_servos(const struct sitl_input &input)
     ssize_t sent = sock.sendto(buf, buflen, "127.0.0.1", 6070);
     free(buf);
 
+    printf("Sent AIL %f, ELE %f, RUD %f, THR %f, FLP %f\n",
+             aileron, elevator, rudder, throttle, flap);
+
     if (sent < 0) {
         fprintf(stderr, "Fatal: Failed to send on control socket\n"),
         exit(1);
@@ -77,67 +90,39 @@ void SilentWings::send_servos(const struct sitl_input &input)
     }
 }
 
+
 /*
   receive an update from the FDM
   This is a blocking function
  */
-void SilentWings::recv_fdm(const struct sitl_input &input)
+bool SilentWings::recv_fdm(void)
 {
     fdm_packet pkt;
     memset(&pkt, 0, sizeof(pkt));
-    
-    uint8_t nread = sock.recv(&pkt, PKT_LEN, 0);
-    
-    if (nread != PKT_LEN) {
-        return;
-    }    
-   
-    // auto-adjust to crrcsim frame rate
-    // QUESION: Do we actually need this?
-    double deltat = (pkt.timestamp - last_timestamp)/1000.0f;
+    uint32_t now = AP_HAL::millis();
 
-    if (deltat > 100000.0) {
-        return;
-    }
-
+    // TO DO: so far this logic, copied over from X-Plane's SITL, doesn't work very well.
+    // Figure out why and enable it?
     /*
-    printf("------------\ntimestamp: %d\nposition_latitude: %f\nposition_longitude: %f\naltitude_ground: %f\naltitude_msl: %f\naltitude_ground_45: %f\nroll: %f\npitch: %f\nyaw: %f\nd_roll: %f\nd_pitch %f\nd_yaw %f\nv_eas%f\nrate_of_turn %f\nvz %f\nvx %f\nvy %f\nvz_wind %f\nvx_wind %f\nvy_wind %f\nay %f\naz %f\nax %f\nangle_sideslip %f\nvario %f\nheading %f\nangle_of_attack %f\nairpressure %f\ndensity %f\ntemperature %f\n-----------\n", 
-        pkt.timestamp, 
-        pkt.position_latitude, 
-        pkt.position_longitude,
-        pkt.altitude_ground,
-        pkt.altitude_msl,
-        pkt.altitude_ground_45,
-        pkt.roll,
-        pkt.pitch,
-        pkt.yaw,
-        pkt.d_roll,
-        pkt.d_pitch,
-        pkt.d_yaw,
-        pkt.v_eas,
-        pkt.rate_of_turn,
-        pkt.vz,
-        pkt.vx,
-        pkt.vy,
-        pkt.vz_wind,
-        pkt.vx_wind,
-        pkt.vy_wind,
-        pkt.ay,
-        pkt.az,
-        pkt.ax,
-        pkt.angle_sideslip,
-        pkt.vario,
-        pkt.heading,
-        pkt.angle_of_attack,
-        pkt.airpressure,
-        pkt.density,
-        pkt.temperature
-        );
+    uint32_t wait_time_ms = 1;
+    // if we are about to get another frame from SilentWings then wait longer
+    if (sw_frame_time > wait_time_ms && now + wait_time_ms >= last_data_time_ms + sw_frame_time) {
+        wait_time_ms = 10;
+    }
+    
+    ssize_t nread = sock.recv(&pkt, PKT_LEN, wait_time_ms);
     */
-
+    
+    ssize_t nread = sock.recv(&pkt, sizeof(pkt), 0);
+    
+    // nread == -1 (255) means no data has arrived
+    if (nread != sizeof(pkt)) {
+        finalize_failure();
+        return false;
+    }    
+    
     dcm.from_euler(radians(pkt.roll), radians(pkt.pitch), radians(pkt.yaw));    
-    // This is g-load.
-    accel_body = Vector3f(pkt.ax * GRAVITY_MSS, pkt.ay * GRAVITY_MSS, pkt.az * GRAVITY_MSS); 
+    accel_body = Vector3f(pkt.ax * GRAVITY_MSS, pkt.ay * GRAVITY_MSS, pkt.az * GRAVITY_MSS); // This is g-load.
     gyro = Vector3f(radians(pkt.d_roll), radians(pkt.d_pitch), radians(pkt.d_yaw));
     velocity_ef = Vector3f(pkt.vx, pkt.vy, pkt.vz);
     wind_ef = velocity_ef - Vector3f(pkt.vx_wind, pkt.vy_wind, pkt.vz_wind);
@@ -151,9 +136,6 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
     position.x = posdelta.x;
     position.y = posdelta.y;
     position.z = posdelta.z;
-    
-    update_position();
-    time_advance();
 
     if (get_distance(curr_location, location) > 4 || abs(curr_location.alt - location.alt)*0.01f > 2.0f || !home_initialized) {
         printf("SilentWings home reset dist=%f alt=%.1f/%.1f\n",
@@ -166,17 +148,27 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
         position.y = 0;
         position.z = 0;
         home_initialized = true;
-        update_position();
-        time_advance();
     }
     
-    // printf("Ground level: %f; pos-x: %f; pos-y: %f; pos-z: %f; location-z(alt) in meters: %f; curr_location-z(alt) in meters: %f; alt_msl: %f; alt_ground: %f\n", ground_level, position.x, position.y, position.z, location.alt*0.01f, curr_location.alt*0.01f, pkt.altitude_msl, pkt.altitude_ground);
-
+    // Auto-adjust to SilentWings' frame rate
+    double deltat = (AP_HAL::millis() - last_data_time_ms) / 1000.0f;
     time_now_us += deltat * 1.0e6;
-
-    // printf("Delta: %f; Time: %d; Lat: %f; Lon: %f; Airspeed: %f; Altitude AGL: %f; Accel-z: %f; Vel-z_ef: %f\n", deltat, pkt.timestamp, pkt.position_latitude, pkt.position_longitude, airspeed, pkt.altitude_ground, pkt.az, velocity_ef[2]);
     
-    if (0) {
+    if (deltat < 0.01 && deltat > 0) {
+        adjust_frame_time(1.0/deltat);
+    }
+    
+    if (now > last_data_time_ms && now - last_data_time_ms < 100) {
+        sw_frame_time = now - last_data_time_ms;
+    }
+    
+    last_data_time_ms = AP_HAL::millis();
+    
+    report.data_count++;
+    report.frame_count++;
+    printf("now data_count is %d\n", report.data_count);
+    
+     if (0) {
         printf("Delta: %f Time: %" PRIu64 "\n", deltat, time_now_us);
         printf("Accel.x %f\n", accel_body.x);
         printf("Accel.y %f\n", accel_body.y);
@@ -191,26 +183,60 @@ void SilentWings::recv_fdm(const struct sitl_input &input)
         printf("Pitch %f\n",   pkt.pitch);
         printf("Yaw %f\n",     pkt.yaw);
     }
-
-    if (deltat < 0.01 && deltat > 0) {
-        adjust_frame_time(1.0/deltat);
-    }
     
-    last_timestamp = pkt.timestamp;
+    // printf("Ground level: %f; pos-x: %f; pos-y: %f; pos-z: %f; location-z(alt) in meters: %f; curr_location-z(alt) in meters: %f; alt_msl: %f; alt_ground: %f\n", ground_level, position.x, position.y, position.z, location.alt*0.01f, curr_location.alt*0.01f, pkt.altitude_msl, pkt.altitude_ground);
+    // printf("Delta: %f; Time: %d; Lat: %f; Lon: %f; Airspeed: %f; Altitude AGL: %f; Accel-z: %f; Vel-z_ef: %f\n", deltat, pkt.timestamp, pkt.position_latitude, pkt.position_longitude, airspeed, pkt.altitude_ground, pkt.az, velocity_ef[2]);
+    
+    // data received successfully
+    return true;
 }
+
+
+void SilentWings::finalize_failure()
+{
+    if (AP_HAL::millis() - last_data_time_ms > 200) {
+        // don't extrapolate beyond 0.2s
+        return;
+    }
+
+    // advance time by 1ms  
+    frame_time_us = 1000;
+    float delta_time = frame_time_us * 1e-6f;
+    time_now_us += frame_time_us;
+    report.frame_count++;
+    
+    extrapolate_sensors(delta_time);
+
+    return;
+}
+
 
 /*
   update the SilentWings simulation by one time step
  */
 void SilentWings::update(const struct sitl_input &input)
-{
+{   
     send_servos(input);
-    recv_fdm(input);
+    recv_fdm();
     update_position();
     time_advance();
-
-    // update magnetic field
     update_mag_field_bf();
+
+    uint32_t now = AP_HAL::millis();
+    
+    if (report.last_report_ms == 0) {
+        report.last_report_ms = now;
+    }
+    
+    // printf("TIME NOW: %d, TIME OF LAST REPORT: %d\n", now, report.last_report_ms);
+    if (now - report.last_report_ms > 5000) {
+        float dt = (now - report.last_report_ms) * 1.0e-3f;
+        // printf("Data rate: %.1f FPS  Frame rate: %.1f FPS\n",
+        //       report.data_count/dt, report.frame_count/dt);
+        report.last_report_ms = now;
+        report.data_count = 0;
+        report.frame_count = 0;
+    }
 }
 
 } // namespace SITL

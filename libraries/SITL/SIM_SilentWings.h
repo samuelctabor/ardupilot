@@ -40,7 +40,6 @@ public:
     }
 
 private:
-    static const unsigned int PKT_LEN = 132; 
 
     /*
       reply packet sent from SilentWings to ArduPilot
@@ -78,11 +77,19 @@ private:
            float  density;                   // Air density at aircraft altitude.
            float  temperature;               // Celcius   Air temperature at aircraft altitude.
     };
+    
+    uint32_t sw_frame_time;
+    struct {
+        uint32_t last_report_ms;
+        uint32_t data_count;
+        uint32_t frame_count;
+    } report;
 
-    void recv_fdm(const struct sitl_input &input);
+    bool recv_fdm(void);
+    void finalize_failure();
     void send_servos(const struct sitl_input &input);
 
-    unsigned int last_timestamp;
+    uint32_t last_data_time_ms;
     SocketAPM sock;
 
     Location curr_location;
