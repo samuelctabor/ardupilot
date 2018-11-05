@@ -86,10 +86,14 @@ private:
     } report;
 
     bool recv_fdm(void);
-    void finalize_failure();
+    bool finalize_failure();
     void send_servos(const struct sitl_input &input);
 
     uint32_t last_data_time_ms;
+    uint32_t first_pkt_timestamp_ms;
+    bool inited_first_pkt_timestamp;
+    uint64_t time_base_us;
+    
     SocketAPM sock;
 
     Location curr_location;

@@ -29,8 +29,11 @@ namespace SITL {
 SilentWings::SilentWings(const char *home_str, const char *frame_str) :
     Aircraft(home_str, frame_str),
     last_data_time_ms(0),
+    first_pkt_timestamp_ms(0),
+    time_base_us(0),
     sock(true),
-    home_initialized(false)
+    home_initialized(false),
+    inited_first_pkt_timestamp(false)
 {
     // try to bind to a specific port so that if we restart ArduPilot
     // SilentWings keeps sending us packets. Not strictly necessary but
@@ -77,8 +80,10 @@ void SilentWings::send_servos(const struct sitl_input &input)
     ssize_t sent = sock.sendto(buf, buflen, "127.0.0.1", 6070);
     free(buf);
 
+    /*
     printf("Sent AIL %f, ELE %f, RUD %f, THR %f, FLP %f\n",
              aileron, elevator, rudder, throttle, flap);
+    */
 
     if (sent < 0) {
         fprintf(stderr, "Fatal: Failed to send on control socket\n"),
@@ -110,16 +115,39 @@ bool SilentWings::recv_fdm(void)
         wait_time_ms = 10;
     }
     
-    ssize_t nread = sock.recv(&pkt, PKT_LEN, wait_time_ms);
+    ssize_t nread = sock.recv(&pkt, sizeof(pkt), wait_time_ms);
     */
     
     ssize_t nread = sock.recv(&pkt, sizeof(pkt), 0);
     
     // nread == -1 (255) means no data has arrived
     if (nread != sizeof(pkt)) {
-        finalize_failure();
-        return false;
+        return finalize_failure();
+        //return false;
     }    
+    
+    // pkt.timestamp is the time of day in SilentWings, measured in ms 
+    // since midnight.  
+    // TO DO: check what happens when a flight in SW crosses midnight
+    if (inited_first_pkt_timestamp) {
+        uint64_t tus = (pkt.timestamp - first_pkt_timestamp_ms) * 1.0e3f;
+        
+        if (tus + time_base_us <= time_now_us) {
+            uint64_t tdiff = time_now_us - (tus + time_base_us);
+            
+            if (tdiff > 1e6f) {
+                printf("SilentWings time reset %lu\n", (unsigned long)tdiff);
+            }
+            
+            time_base_us = time_now_us - tus;
+        }
+        
+        time_now_us = time_base_us + tus;
+    }
+    else {
+        first_pkt_timestamp_ms = pkt.timestamp;
+        inited_first_pkt_timestamp = true;
+    }
     
     dcm.from_euler(radians(pkt.roll), radians(pkt.pitch), radians(pkt.yaw));    
     accel_body = Vector3f(pkt.ax * GRAVITY_MSS, pkt.ay * GRAVITY_MSS, pkt.az * GRAVITY_MSS); // This is g-load.
@@ -136,7 +164,8 @@ bool SilentWings::recv_fdm(void)
     position.x = posdelta.x;
     position.y = posdelta.y;
     position.z = posdelta.z;
-
+    update_position();
+    
     if (get_distance(curr_location, location) > 4 || abs(curr_location.alt - location.alt)*0.01f > 2.0f || !home_initialized) {
         printf("SilentWings home reset dist=%f alt=%.1f/%.1f\n",
                get_distance(curr_location, location), curr_location.alt*0.01f, location.alt*0.01f);
@@ -148,11 +177,13 @@ bool SilentWings::recv_fdm(void)
         position.y = 0;
         position.z = 0;
         home_initialized = true;
+        update_position();
     }
     
     // Auto-adjust to SilentWings' frame rate
+    // This affects the data rate (without this adjustment, the data rate is
+    // low no matter what the output_udp_rate in SW's options.dat file is.
     double deltat = (AP_HAL::millis() - last_data_time_ms) / 1000.0f;
-    time_now_us += deltat * 1.0e6;
     
     if (deltat < 0.01 && deltat > 0) {
         adjust_frame_time(1.0/deltat);
@@ -166,9 +197,8 @@ bool SilentWings::recv_fdm(void)
     
     report.data_count++;
     report.frame_count++;
-    printf("now data_count is %d\n", report.data_count);
     
-     if (0) {
+    if (0) {
         printf("Delta: %f Time: %" PRIu64 "\n", deltat, time_now_us);
         printf("Accel.x %f\n", accel_body.x);
         printf("Accel.y %f\n", accel_body.y);
@@ -192,22 +222,21 @@ bool SilentWings::recv_fdm(void)
 }
 
 
-void SilentWings::finalize_failure()
+bool SilentWings::finalize_failure()
 {
     if (AP_HAL::millis() - last_data_time_ms > 200) {
         // don't extrapolate beyond 0.2s
-        return;
+        return false;
     }
 
-    // advance time by 1ms  
+    // advance time by 1ms
     frame_time_us = 1000;
     float delta_time = frame_time_us * 1e-6f;
     time_now_us += frame_time_us;
-    report.frame_count++;
-    
     extrapolate_sensors(delta_time);
-
-    return;
+    update_position();
+    report.frame_count++;
+    return true;
 }
 
 
@@ -216,12 +245,13 @@ void SilentWings::finalize_failure()
  */
 void SilentWings::update(const struct sitl_input &input)
 {   
-    send_servos(input);
-    recv_fdm();
-    update_position();
+    if (recv_fdm()) {
+        send_servos(input);
+    }
+    
     time_advance();
     update_mag_field_bf();
-
+    
     uint32_t now = AP_HAL::millis();
     
     if (report.last_report_ms == 0) {
@@ -231,12 +261,12 @@ void SilentWings::update(const struct sitl_input &input)
     // printf("TIME NOW: %d, TIME OF LAST REPORT: %d\n", now, report.last_report_ms);
     if (now - report.last_report_ms > 5000) {
         float dt = (now - report.last_report_ms) * 1.0e-3f;
-        // printf("Data rate: %.1f FPS  Frame rate: %.1f FPS\n",
-        //       report.data_count/dt, report.frame_count/dt);
+        printf("Data rate: %.1f FPS  Frame rate: %.1f FPS\n",
+              report.data_count/dt, report.frame_count/dt);
         report.last_report_ms = now;
         report.data_count = 0;
         report.frame_count = 0;
-    }
+    }    
 }
 
 } // namespace SITL

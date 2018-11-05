@@ -63,7 +63,8 @@ float Variometer::correct_netto_rate(float climb_rate,
     float C2;   // C2 = CDi0/CL0 = B*CL0
     float netto_rate;
     float cosphi;
-    CL0 = polar_K / (aspd * aspd);
+    float safe_aspd = MAX(aspd, 0.01f);
+    CL0 = polar_K / (safe_aspd * safe_aspd);
     C1 = polar_CD0 / CL0;  // constant describing expected angle to overcome zero-lift drag
     C2 = polar_B * CL0;    // constant describing expected angle to overcome lift induced drag at zero bank
 
