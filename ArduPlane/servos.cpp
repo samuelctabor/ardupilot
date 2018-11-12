@@ -221,6 +221,29 @@ void Plane::dspoiler_update(void)
 }
 
 /*
+ set airbrakes if throttle_min is negative. This is the same mechanism as used for reverse thrust.
+ */
+void Plane::airbrake_update(void)
+{
+    float throttle_min = aparm.throttle_min.get();
+    int16_t spoiler_pc = 0;
+
+    if (throttle_min<0) {
+        if (landing.is_flaring()) {
+            // Full airbrake during flare.
+            spoiler_pc = 100.0;
+        }
+        else {
+            // Determine fraction between zero and full negative throttle.
+            spoiler_pc = -constrain_int16(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), -100, 0);
+        }
+
+        // Output to airbrake servo types.
+        SRV_Channels::set_output_scaled(SRV_Channel::k_airbrake, spoiler_pc);
+    }
+}
+
+/*
   setup servos for idle mode
   Idle mode is used during balloon launch to keep servos still, apart
   from occasional wiggle to prevent freezing up
@@ -594,6 +617,9 @@ void Plane::set_servos(void)
 
     // setup flap outputs
     set_servos_flaps();
+
+    // set airbrake outputs
+    airbrake_update();
     
     if (auto_throttle_mode ||
         quadplane.in_assisted_flight() ||
