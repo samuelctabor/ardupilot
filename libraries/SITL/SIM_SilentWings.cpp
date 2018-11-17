@@ -61,6 +61,10 @@ SilentWings::SilentWings(const char *home_str, const char *frame_str) :
 void SilentWings::send_servos(const struct sitl_input &input)
 {
     char *buf = nullptr;
+    // Turn off direct joystick input to the simulator. All joystick commands
+    // should go through MissionPlanner and get properly fused with ArduPlane's
+    // control inputs when in automatic flight modes.
+    float joystick = 0.0f;
     float aileron  = filtered_servo_angle(input, 0);
     float elevator = filtered_servo_angle(input, 1);
     float throttle = filtered_servo_range(input, 2);
@@ -68,12 +72,13 @@ void SilentWings::send_servos(const struct sitl_input &input)
     float flap     = 0.0f;
 
     asprintf(&buf,
+             "JOY %f\n"
              "AIL %f\n"
              "ELE %f\n"
              "RUD %f\n"
              "THR %f\n"
              "FLP %f\n",
-             aileron, elevator, rudder, throttle,flap);
+             joystick, aileron, elevator, rudder, throttle, flap);
 
     ssize_t buflen = strlen(buf);
     
@@ -152,8 +157,10 @@ bool SilentWings::recv_fdm(void)
     dcm.from_euler(radians(pkt.roll), radians(pkt.pitch), radians(pkt.yaw));    
     accel_body = Vector3f(pkt.ax * GRAVITY_MSS, pkt.ay * GRAVITY_MSS, pkt.az * GRAVITY_MSS); // This is g-load.
     gyro = Vector3f(radians(pkt.d_roll), radians(pkt.d_pitch), radians(pkt.d_yaw));
-    velocity_ef = Vector3f(pkt.vx, pkt.vy, pkt.vz);
-    wind_ef = velocity_ef - Vector3f(pkt.vx_wind, pkt.vy_wind, pkt.vz_wind);
+    // SilentWings provides velocity in body frame.
+    velocity_ef = dcm * Vector3f(pkt.vx, pkt.vy, pkt.vz);
+    // SilentWings also provides velocity in body frame w.r.t. the wind, from which we can infer the wind.
+    wind_ef = dcm * (Vector3f(pkt.vx, pkt.vy, pkt.vz) - Vector3f(pkt.vx_wind, pkt.vy_wind, pkt.vz_wind));
     airspeed = pkt.v_eas;
     airspeed_pitot = pkt.v_eas;
     curr_location.lat = pkt.position_latitude * 1.0e7;
