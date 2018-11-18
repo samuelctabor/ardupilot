@@ -179,10 +179,12 @@ bool SilentWings::recv_fdm(void)
         // reset home location
         home.lat = curr_location.lat;
         home.lng = curr_location.lng;
-        home.alt = curr_location.alt;
+        // Resetting altitude reference point in flight can throw off a bunch
+        // of important calculations, so let the home altitude always be 0m MSL
+        home.alt = 0;
         position.x = 0;
         position.y = 0;
-        position.z = 0;
+        position.z = -curr_location.alt;
         home_initialized = true;
         update_position();
     }
