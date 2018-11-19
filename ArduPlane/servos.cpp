@@ -226,7 +226,10 @@ void Plane::dspoiler_update(void)
 void Plane::airbrake_update(void)
 {
     float throttle_min = aparm.throttle_min.get();
+    float throttle_max = aparm.throttle_max.get();
     int16_t spoiler_pc = 0;
+
+    int throttle_pc = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
 
     if (throttle_min<0) {
         if (landing.is_flaring()) {
@@ -235,11 +238,19 @@ void Plane::airbrake_update(void)
         }
         else {
             // Determine fraction between zero and full negative throttle.
-            spoiler_pc = -constrain_int16(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), -100, 0);
+            spoiler_pc = -constrain_int16(throttle_pc, -100, 0);
         }
 
         // Output to airbrake servo types.
         SRV_Channels::set_output_scaled(SRV_Channel::k_airbrake, spoiler_pc);
+
+        // Constrain throttle to be positive.
+        int throttle_pc_pos = constrain_int16(throttle_pc, 0, 100);
+
+        // Reset it to use full range.
+        int throttle_pc_rescaled = throttle_min + throttle_pc_pos * (throttle_max - throttle_min)/throttle_max;
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle_pc_rescaled);
+
     }
 }
 
