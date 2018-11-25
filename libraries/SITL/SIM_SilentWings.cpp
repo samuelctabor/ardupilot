@@ -127,8 +127,7 @@ bool SilentWings::recv_fdm(void)
     
     // nread == -1 (255) means no data has arrived
     if (nread != sizeof(pkt)) {
-        return finalize_failure();
-        //return false;
+        return false;
     }    
 
     memcpy(&pkt, &tmp_pkt, sizeof(pkt));
@@ -255,6 +254,10 @@ void SilentWings::update(const struct sitl_input &input)
     if (recv_fdm()) {
         process_packet();
         send_servos(input);
+    } else {
+        if (finalize_failure()) {
+            send_servos(input);
+        }
     }
     
     time_advance();
