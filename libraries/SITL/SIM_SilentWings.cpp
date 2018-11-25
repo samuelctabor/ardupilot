@@ -107,8 +107,8 @@ void SilentWings::send_servos(const struct sitl_input &input)
  */
 bool SilentWings::recv_fdm(void)
 {
-    fdm_packet pkt;
-    memset(&pkt, 0, sizeof(pkt));
+    fdm_packet tmp_pkt;
+    memset(&tmp_pkt, 0, sizeof(pkt));
     uint32_t now = AP_HAL::millis();
 
     // TO DO: so far this logic, copied over from X-Plane's SITL, doesn't work very well.
@@ -123,14 +123,22 @@ bool SilentWings::recv_fdm(void)
     ssize_t nread = sock.recv(&pkt, sizeof(pkt), wait_time_ms);
     */
     
-    ssize_t nread = sock.recv(&pkt, sizeof(pkt), 0);
+    ssize_t nread = sock.recv(&tmp_pkt, sizeof(pkt), 0);
     
     // nread == -1 (255) means no data has arrived
     if (nread != sizeof(pkt)) {
         return finalize_failure();
         //return false;
     }    
-    
+
+    memcpy(&pkt, &tmp_pkt, sizeof(pkt));
+    process_packet();
+    return true;
+}
+
+
+void SilentWings::process_packet()
+{
     // pkt.timestamp is the time of day in SilentWings, measured in ms 
     // since midnight.  
     // TO DO: check what happens when a flight in SW crosses midnight
@@ -198,10 +206,6 @@ bool SilentWings::recv_fdm(void)
         adjust_frame_time(1.0/deltat);
     }
     
-    if (now > last_data_time_ms && now - last_data_time_ms < 100) {
-        sw_frame_time = now - last_data_time_ms;
-    }
-    
     last_data_time_ms = AP_HAL::millis();
     
     report.data_count++;
@@ -222,12 +226,6 @@ bool SilentWings::recv_fdm(void)
         printf("Pitch %f\n",   pkt.pitch);
         printf("Yaw %f\n",     pkt.yaw);
     }
-    
-    // printf("Ground level: %f; pos-x: %f; pos-y: %f; pos-z: %f; location-z(alt) in meters: %f; curr_location-z(alt) in meters: %f; alt_msl: %f; alt_ground: %f\n", ground_level, position.x, position.y, position.z, location.alt*0.01f, curr_location.alt*0.01f, pkt.altitude_msl, pkt.altitude_ground);
-    // printf("Delta: %f; Time: %d; Lat: %f; Lon: %f; Airspeed: %f; Altitude AGL: %f; Accel-z: %f; Vel-z_ef: %f\n", deltat, pkt.timestamp, pkt.position_latitude, pkt.position_longitude, airspeed, pkt.altitude_ground, pkt.az, velocity_ef[2]);
-    
-    // data received successfully
-    return true;
 }
 
 

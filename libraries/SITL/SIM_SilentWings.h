@@ -76,9 +76,8 @@ private:
            float  airpressure;               // pascal    Local air pressure (at aircraft altitude).
            float  density;                   // Air density at aircraft altitude.
            float  temperature;               // Celcius   Air temperature at aircraft altitude.
-    };
-    
-    uint32_t sw_frame_time;
+    } pkt;
+
     struct {
         uint32_t last_report_ms;
         uint32_t data_count;
@@ -86,6 +85,7 @@ private:
     } report;
 
     bool recv_fdm(void);
+    void process_packet(void);
     bool finalize_failure();
     void send_servos(const struct sitl_input &input);
 
