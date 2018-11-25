@@ -132,7 +132,7 @@ bool SilentWings::recv_fdm(void)
     }    
 
     memcpy(&pkt, &tmp_pkt, sizeof(pkt));
-    process_packet();
+
     return true;
 }
 
@@ -253,6 +253,7 @@ bool SilentWings::finalize_failure()
 void SilentWings::update(const struct sitl_input &input)
 {   
     if (recv_fdm()) {
+        process_packet();
         send_servos(input);
     }
     
