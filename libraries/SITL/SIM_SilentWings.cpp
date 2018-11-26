@@ -42,6 +42,8 @@ SilentWings::SilentWings(const char *home_str, const char *frame_str) :
 
     sock.reuseaddress();
     sock.set_blocking(false);
+
+    time_now_us = 1;
     
     // TO DO: Force ArduPlane to use sensor data from SilentWings as the actual state,
     // without using EKF, i.e., using "fake EKF". Disable gyro calibration
@@ -108,20 +110,6 @@ void SilentWings::send_servos(const struct sitl_input &input)
 bool SilentWings::recv_fdm(void)
 {
     fdm_packet tmp_pkt;
-    memset(&tmp_pkt, 0, sizeof(pkt));
-    uint32_t now = AP_HAL::millis();
-
-    // TO DO: so far this logic, copied over from X-Plane's SITL, doesn't work very well.
-    // Figure out why and enable it?
-    /*
-    uint32_t wait_time_ms = 1;
-    // if we are about to get another frame from SilentWings then wait longer
-    if (sw_frame_time > wait_time_ms && now + wait_time_ms >= last_data_time_ms + sw_frame_time) {
-        wait_time_ms = 10;
-    }
-    
-    ssize_t nread = sock.recv(&pkt, sizeof(pkt), wait_time_ms);
-    */
     
     ssize_t nread = sock.recv(&tmp_pkt, sizeof(pkt), 0);
     
@@ -225,16 +213,13 @@ void SilentWings::process_packet()
         printf("Pitch %f\n",   pkt.pitch);
         printf("Yaw %f\n",     pkt.yaw);
     }
+
+    time_now_us = 1e3 * (pkt.timestamp  - first_pkt_timestamp_ms);
 }
 
 
 bool SilentWings::finalize_failure()
 {
-    if (AP_HAL::millis() - last_data_time_ms > 200) {
-        // don't extrapolate beyond 0.2s
-        return false;
-    }
-
     // advance time by 1ms
     frame_time_us = 1000;
     float delta_time = frame_time_us * 1e-6f;
@@ -252,15 +237,25 @@ bool SilentWings::finalize_failure()
 void SilentWings::update(const struct sitl_input &input)
 {   
     if (recv_fdm()) {
-        process_packet();
-        send_servos(input);
+        printf("Pkt received with time %" PRIu32 "\n", pkt.timestamp - first_pkt_timestamp_ms);
+
+        if (!inited_first_pkt_timestamp) {
+            process_packet();
+        }
     } else {
-        if (finalize_failure()) {
-            send_servos(input);
+        if (inited_first_pkt_timestamp & (pkt.timestamp > first_pkt_timestamp_ms)) {
+            if ((time_now_us+1e3) < ((pkt.timestamp - first_pkt_timestamp_ms)*1e3)) {
+                // Advance time.
+                if (finalize_failure()) {
+                    send_servos(input);
+                }
+            } else if (time_now_us < ((pkt.timestamp - first_pkt_timestamp_ms)*1e3)) {
+                process_packet();
+                send_servos(input);
+            }
         }
     }
     
-    time_advance();
     update_mag_field_bf();
     
     uint32_t now = AP_HAL::millis();
