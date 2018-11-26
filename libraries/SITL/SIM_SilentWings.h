@@ -86,7 +86,7 @@ private:
 
     bool recv_fdm(void);
     void process_packet(void);
-    bool finalize_failure();
+    void intermediate_update();
     void send_servos(const struct sitl_input &input);
 
     uint32_t last_data_time_ms;

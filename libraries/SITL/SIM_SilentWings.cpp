@@ -218,7 +218,7 @@ void SilentWings::process_packet()
 }
 
 
-bool SilentWings::finalize_failure()
+void SilentWings::intermediate_update()
 {
     // advance time by 1ms
     frame_time_us = 1000;
@@ -227,7 +227,6 @@ bool SilentWings::finalize_failure()
     extrapolate_sensors(delta_time);
     update_position();
     report.frame_count++;
-    return true;
 }
 
 
@@ -237,19 +236,24 @@ bool SilentWings::finalize_failure()
 void SilentWings::update(const struct sitl_input &input)
 {   
     if (recv_fdm()) {
-        printf("Pkt received with time %" PRIu32 "\n", pkt.timestamp - first_pkt_timestamp_ms);
+        // Received a valid packet.
 
         if (!inited_first_pkt_timestamp) {
+            // This is the first packet we've had. Process it; future packets won't be processed immediately like this.
             process_packet();
         }
     } else {
         if (inited_first_pkt_timestamp & (pkt.timestamp > first_pkt_timestamp_ms)) {
+            // No valid packet this time, but at least two valid packets have been received before.
             if ((time_now_us+1e3) < ((pkt.timestamp - first_pkt_timestamp_ms)*1e3)) {
+                // Safe to advance by 1000us without overtaking Silent Wings.
+
                 // Advance time.
-                if (finalize_failure()) {
-                    send_servos(input);
-                }
+                intermediate_update();
+                send_servos(input);
             } else if (time_now_us < ((pkt.timestamp - first_pkt_timestamp_ms)*1e3)) {
+
+                // Latest Silent Wings packet is within 1000us. Advance to it and update SITL data.
                 process_packet();
                 send_servos(input);
             }
