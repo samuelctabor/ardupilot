@@ -240,18 +240,17 @@ void Plane::airbrake_update(void)
             // Determine fraction between zero and full negative throttle.
             spoiler_pc = -constrain_int16(throttle_pc, -100, 0);
         }
-
-        // Output to airbrake servo types.
-        SRV_Channels::set_output_scaled(SRV_Channel::k_airbrake, spoiler_pc);
-
-        // Constrain throttle to be positive.
-        int throttle_pc_pos = constrain_int16(throttle_pc, 0, 100);
-
-        // Reset it to use full range.
-        int throttle_pc_rescaled = throttle_min + throttle_pc_pos * (throttle_max - throttle_min)/throttle_max;
-        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle_pc_rescaled);
-
     }
+
+    // Output to airbrake servo types.
+    SRV_Channels::set_output_scaled(SRV_Channel::k_airbrake, spoiler_pc);
+
+    // Constrain throttle to be positive.
+    int throttle_pc_pos = constrain_int16(throttle_pc, 0, 100);
+
+    // Reset it to use full range.
+    int throttle_pc_rescaled = throttle_min + throttle_pc_pos * (throttle_max - throttle_min)/throttle_max;
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle_pc_rescaled);
 }
 
 /*
