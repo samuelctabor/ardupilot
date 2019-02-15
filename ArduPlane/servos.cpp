@@ -225,6 +225,15 @@ void Plane::dspoiler_update(void)
  */
 void Plane::airbrake_update(void)
 {
+    int8_t manual_airbrake_percent = 0;
+
+    // work out any manual airbrake input
+    RC_Channel *airbrakein = RC_Channels::rc_channel(g2.airbrake_in_channel-1);
+    if (airbrakein != nullptr && !failsafe.rc_failsafe && failsafe.throttle_counter == 0) {
+        manual_airbrake_percent = airbrakein->percent_input();
+    }
+
+
     float throttle_min = aparm.throttle_min.get();
     float throttle_max = aparm.throttle_max.get();
     int16_t spoiler_pc = 0;
@@ -240,6 +249,10 @@ void Plane::airbrake_update(void)
             // Determine fraction between zero and full negative throttle.
             spoiler_pc = -constrain_int16(throttle_pc, -100, 0);
         }
+    }
+
+    if (spoiler_pc<manual_airbrake_percent) {
+        spoiler_pc = manual_airbrake_percent;
     }
 
     // Output to airbrake servo types.

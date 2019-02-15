@@ -551,6 +551,8 @@ public:
 #endif // ENABLE_SCRIPTING
 
     AP_Int8 takeoff_throttle_accel_count;
+
+    AP_Int8 airbrake_in_channel;
 };
 
 extern const AP_Param::Info var_info[];

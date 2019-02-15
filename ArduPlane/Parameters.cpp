@@ -1189,6 +1189,14 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: User
     AP_GROUPINFO("TKOFF_ACCEL_CNT", 15, ParametersG2, takeoff_throttle_accel_count, 1),
 
+
+    // @Param: AIRBRK_IN_CH
+    // @DisplayName: RC channel used to manually set airbrake.
+    // @Description: This RC channel will override the automatically selected airbrake setting if it is larger.
+    // @Range: 1 8
+    // @User: User
+    AP_GROUPINFO("AIRBRK_IN_CH", 16, ParametersG2, airbrake_in_channel, 0),
+
     AP_GROUPEND
 };
 
