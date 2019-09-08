@@ -589,7 +589,13 @@ void Plane::calc_nav_roll()
             millis() - plane.guided_state.last_forced_rpy_ms.x < 3000) {
         commanded_roll = plane.guided_state.forced_rpy_cd.x;
     }
-
+#if SOARING_ENABLED == ENABLED
+    else if (control_mode == &mode_loiter &&
+         g2.soaring_controller.is_active() &&
+         g2.soaring_controller.is_controlling_roll()) {
+        commanded_roll = g2.soaring_controller.get_roll_cmd();
+    }
+#endif
     nav_roll_cd = constrain_int32(commanded_roll, -roll_limit_cd, roll_limit_cd);
     update_load_factor();
 }

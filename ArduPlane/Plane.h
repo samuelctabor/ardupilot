@@ -1004,6 +1004,7 @@ private:
     void accel_cal_update(void);
 #if SOARING_ENABLED == ENABLED
     void update_soaring();
+    void soaring_policy_computation();
 #endif
 
     bool reversed_throttle;

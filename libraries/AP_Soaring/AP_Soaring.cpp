@@ -135,15 +135,27 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("MAX_RADIUS", 17, SoaringController, max_radius, -1),
 
+    // @Param: EXIT_MODE
+    // @DisplayName: Thermal exit mode
+    // @Description: Thermal exit mode. 0 = ArduSoar, 1 (recommended) or 2 = POMDP. It's possible to use ArduSoar's thermal exit mode with POMDSoar, but ArduSoar can only use its own thermal exit mode, 0.
+    // @Units:
+    // @Range: 0 2
+    // @User: Advanced
+    AP_GROUPINFO("EXIT_MODE", 16, SoaringController, exit_mode, 0),
+
+    //POMDP params.
+    AP_SUBGROUPINFO(_pomdsoar, "POMD_", 18, SoaringController, POMDSoarAlgorithm),
+
     AP_GROUPEND
 };
 
-SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms) :
+SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController  &rollController, AP_Float &scaling_speed) :
     _ahrs(ahrs),
     _spdHgt(spdHgt),
     _vario(ahrs,parms),
     _aparm(parms),
-    _throttle_suppressed(true)
+    _throttle_suppressed(true),
+    _pomdsoar(this, rollController, scaling_speed)
 {
     AP_Param::setup_object_defaults(this, var_info);
 
@@ -284,6 +296,10 @@ void SoaringController::init_thermalling()
 
     _position_x_filter.reset(_ekf.X[2]);
     _position_y_filter.reset(_ekf.X[3]);
+
+    if (_pomdsoar.pomdp_on) {
+        _pomdsoar.init_thermalling();
+    }
 }
 
 void SoaringController::init_cruising()
@@ -312,6 +328,16 @@ void SoaringController::update_thermalling()
 
     
     _thermalability = (_ekf.X[0]*expf(-powf(_aparm.loiter_radius / _ekf.X[1], 2))) - _vario.get_exp_thermalling_sink();
+
+    if (soar_active
+        && _pomdsoar.pomdp_on
+        && _pomdsoar.are_computations_in_progress()
+        && (is_in_thermal_locking_period() || _pomdsoar.is_set_to_continue_past_thermal_locking_period()))
+    {
+        _pomdsoar.update_thermalling(current_position);
+
+        gcs().send_text(MAV_SEVERITY_INFO, "Action %f", _pomdsoar.get_action());
+    }
 
     _prev_update_time = AP_HAL::micros64();
 
@@ -474,4 +500,97 @@ bool SoaringController::check_drift(Vector2f prev_wp, Vector2f next_wp)
 
         return (powf(parallel,2)+powf(perpendicular,2)) > powf(max_drift,2);;
     }
+}
+
+bool SoaringController::is_in_thermal_locking_period()
+{
+    return ((AP_HAL::micros64() - _thermal_start_time_us) < ((unsigned)min_thermal_s * 1e6));
+}
+
+float SoaringController::get_yaw() const
+{
+    return _ahrs.yaw;
+}
+
+float SoaringController::calculate_aircraft_sinkrate(float phi, float aspd) const
+{
+    return _vario.calculate_aircraft_sinkrate(phi, polar_K, polar_CD0, polar_B);
+}
+
+void SoaringController::get_altitude_wrt_home(float *alt) const
+{
+    _ahrs.get_relative_position_D_home(*alt);
+    *alt *= -1.0f;
+}
+
+bool SoaringController::is_controlling_roll()
+{
+    // Only the POMDP algorithm sets target roll directly.
+    // The other method uses waypoints and the built-in navigation controller.
+    return _pomdsoar.pomdp_on;
+}
+
+void SoaringController::soaring_policy_computation()
+{
+    if (_pomdsoar.pomdp_on)
+    {
+        _pomdsoar.update_solver();
+    }
+}
+
+
+void SoaringController::stop_computation()
+{
+    _pomdsoar.stop_computations();
+}
+
+
+float SoaringController::get_roll_cmd()
+{
+    return _pomdsoar.get_action();
+}
+
+float SoaringController::get_roll() const
+{
+    return _ahrs.roll;
+}
+
+
+float SoaringController::get_rate() const
+{
+    return _ahrs.get_gyro().x;
+}
+
+
+void SoaringController::get_position(Location& loc)
+{
+     _ahrs.get_position(loc);
+}
+
+
+float SoaringController::get_aspd() const
+{
+    // initialize to an obviously invalid value, which should get overwritten.
+    float aspd = -100.0f;
+
+    if (!_ahrs.airspeed_estimate(aspd))
+    {
+        aspd = _spdHgt.get_target_airspeed();
+    }
+
+    return aspd;
+}
+
+
+void SoaringController::get_relative_position_wrt_home(Vector2f &vec) const
+{
+    if (!_ahrs.get_relative_position_NE_home(vec)) {
+        vec = Vector2f(0.0,0.0);
+    }
+}
+
+
+float SoaringController::get_eas2tas() const
+{
+    return _ahrs.get_EAS2TAS();
 }

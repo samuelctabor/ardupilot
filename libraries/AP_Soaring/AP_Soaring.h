@@ -15,12 +15,16 @@
 #include "ExtendedKalmanFilter.h"
 #include "Variometer.h"
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
+#include <AP_GPS/AP_GPS.h>
+#include <APM_Control/APM_Control.h>
+#include "POMDP_Soar.h"
 
 #define INITIAL_THERMAL_STRENGTH 2.0
 #define INITIAL_THERMAL_RADIUS 80.0
 #define INITIAL_STRENGTH_COVARIANCE 0.0049
 #define INITIAL_RADIUS_COVARIANCE 400.0
 #define INITIAL_POSITION_COVARIANCE 400.0
+#define SOARING_RND_UPDATE_RATE 20 // 260 microseconds of Box Miller 4D rnd samples
 
 
 class SoaringController {
@@ -54,6 +58,10 @@ class SoaringController {
 
     LowPassFilter<float> _position_x_filter;
     LowPassFilter<float> _position_y_filter;
+    
+    friend class POMDSoarAlgorithm;
+    float calculate_aircraft_sinkrate(float phi, float aspd) const;
+    POMDSoarAlgorithm _pomdsoar;
 
 protected:
     AP_Int8 soar_active;
@@ -72,9 +80,10 @@ protected:
     AP_Float alt_min;
     AP_Float alt_cutoff;
     AP_Float max_drift;
+    AP_Int8 exit_mode;
 
 public:
-    SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms);
+    SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);
 
     enum class LoiterStatus {
         DISABLED,
@@ -100,6 +109,7 @@ public:
     bool suppress_throttle();
     bool check_thermal_criteria();
     LoiterStatus check_cruise_criteria(Vector2f prev_wp, Vector2f next_wp);
+    bool is_in_thermal_locking_period();
     void init_thermalling();
     void init_cruising();
     void update_thermalling();
@@ -124,6 +134,10 @@ public:
 
     bool is_active() const {return _last_update_status>=SoaringController::ActiveStatus::MANUAL_MODE_CHANGE;};
 
+    void soaring_policy_computation();
+    bool is_controlling_roll();
+    float get_roll_cmd();
+
 private:
     // slow down messages if they are the same. During loiter we could smap the same message. Only show new messages during loiters
     LoiterStatus _cruise_criteria_msg_last;
@@ -131,4 +145,14 @@ private:
     ActiveStatus _last_update_status;
 
     ActiveStatus active_state() const;
+
+    void get_altitude_wrt_home(float *alt) const;
+    void stop_computation();
+    void get_relative_position_wrt_home(Vector2f &vec) const;
+    float get_aspd() const;
+    void get_position(Location& loc);
+    float get_rate() const;
+    float get_roll() const;
+    float get_eas2tas() const;
+    float get_yaw() const;
 };
