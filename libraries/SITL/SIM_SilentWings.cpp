@@ -150,7 +150,7 @@ void SilentWings::send_servos(const struct sitl_input &input)
 bool SilentWings::recv_fdm(void)
 {
     fdm_packet tmp_pkt;
-    memset(&pkt, 0, sizeof(pkt));
+    memset(&tmp_pkt, 0, sizeof(pkt));
 
     ssize_t nread = sock.recv(&tmp_pkt, sizeof(pkt), 0);
     
@@ -275,17 +275,33 @@ bool SilentWings::interim_update()
 void SilentWings::update(const struct sitl_input &input)
 {
     if (recv_fdm()) {
-        process_packet();
-        // Time has been advanced by process_packet(.)
-        send_servos(input);
+        // Received a valid packet.
+        printf("Pkt received with time %" PRIu32 "\n", pkt.timestamp - first_pkt_timestamp_ms);
+
+        if (!inited_first_pkt_timestamp) {
+            // This is the first packet we've had. Process it; future packets won't be processed immediately like this.
+            printf("Initing time base\n");
+            process_packet();
+        }
+    } else {
+        if (inited_first_pkt_timestamp & (pkt.timestamp > first_pkt_timestamp_ms)) {
+            // No valid packet this time, but at least two valid packets have been received before.
+            if ((time_now_us+1e3) < ((pkt.timestamp - first_pkt_timestamp_ms)*1e3)) {
+                // Safe to advance by 1000us without overtaking Silent Wings.
+                printf("Intermediate step\n");
+
+                // Advance time.
+                interim_update();
+            } else {
+
+                // Latest Silent Wings packet is within 1000us. Advance to it and update SITL data.
+                printf("Processing packet\n");
+                process_packet();
+                send_servos(input);
+            }
+        }
     }
-    else if (interim_update()) {
-        // This clause is triggered only if we previously
-        // received at least one data packet.
-        // Time has been advanced by interim_update(.)
-        send_servos(input);
-    }
-    
+
     // This clause is triggered if and only if we haven't received
     // any data packets yet (and therefore didn't attempt
     // extrapolating data via interim_update(.) either).
