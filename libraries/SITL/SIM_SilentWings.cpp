@@ -182,7 +182,7 @@ void SilentWings::process_packet()
     }
     
     dcm.from_euler(radians(pkt.roll), radians(pkt.pitch), radians(pkt.yaw));    
-    accel_body = Vector3f(pkt.ax * GRAVITY_MSS, pkt.ay * GRAVITY_MSS, pkt.az * GRAVITY_MSS); // This is g-load.
+    accel_body = Vector3f(pkt.ax, pkt.ay, pkt.az); // This is m/s2
     gyro = Vector3f(radians(pkt.d_roll), radians(pkt.d_pitch), radians(pkt.d_yaw));
     // SilentWings provides velocity in body frame.
     velocity_ef = dcm * Vector3f(pkt.vx, pkt.vy, pkt.vz);
