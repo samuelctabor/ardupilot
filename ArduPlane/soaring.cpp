@@ -218,9 +218,4 @@ void Plane::update_soaring() {
 
 }
 
-void Plane::soaring_policy_computation()
-{
-    g2.soaring_controller.soaring_policy_computation();
-}
-
 #endif // SOARING_ENABLED

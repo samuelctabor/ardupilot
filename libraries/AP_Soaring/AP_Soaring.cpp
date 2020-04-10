@@ -135,27 +135,19 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("MAX_RADIUS", 17, SoaringController, max_radius, -1),
 
-    // @Param: EXIT_MODE
-    // @DisplayName: Thermal exit mode
-    // @Description: Thermal exit mode. 0 = ArduSoar, 1 (recommended) or 2 = POMDP. It's possible to use ArduSoar's thermal exit mode with POMDSoar, but ArduSoar can only use its own thermal exit mode, 0.
-    // @Units:
-    // @Range: 0 2
-    // @User: Advanced
-    AP_GROUPINFO("EXIT_MODE", 16, SoaringController, exit_mode, 0),
-
     //POMDP params.
     AP_SUBGROUPINFO(_pomdsoar, "POMD_", 18, SoaringController, POMDSoarAlgorithm),
 
     AP_GROUPEND
 };
 
-SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController  &rollController, AP_Float &scaling_speed) :
+SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController) :
     _ahrs(ahrs),
     _spdHgt(spdHgt),
     _vario(ahrs,parms),
     _aparm(parms),
     _throttle_suppressed(true),
-    _pomdsoar(this, rollController, scaling_speed)
+    _pomdsoar(this, rollController)
 {
     AP_Param::setup_object_defaults(this, var_info);
 
@@ -298,7 +290,7 @@ void SoaringController::init_thermalling()
     _position_y_filter.reset(_ekf.X[3]);
 
     if (_pomdsoar.pomdp_on) {
-        _pomdsoar.init_thermalling();
+        _pomdsoar.init_thermalling((float)_aparm.roll_limit_cd/100);
     }
 }
 
@@ -326,17 +318,12 @@ void SoaringController::update_thermalling()
     // update the filter
     _ekf.update(_vario.reading, current_position.x, current_position.y, wind_drift.x, wind_drift.y);
 
-    
-    _thermalability = (_ekf.X[0]*expf(-powf(_aparm.loiter_radius / _ekf.X[1], 2))) - _vario.get_exp_thermalling_sink();
-
-    if (soar_active
-        && _pomdsoar.pomdp_on
-        && _pomdsoar.are_computations_in_progress()
-        && (is_in_thermal_locking_period() || _pomdsoar.is_set_to_continue_past_thermal_locking_period()))
-    {
+    if (_pomdsoar.healthy()) {
         _pomdsoar.update_thermalling(current_position);
 
-        gcs().send_text(MAV_SEVERITY_INFO, "Action %f", _pomdsoar.get_action());
+        _thermalability = _pomdsoar.assess_thermalability();
+    } else {
+        _thermalability = (_ekf.X[0]*expf(-powf(_aparm.loiter_radius / _ekf.X[1], 2))) - _vario.get_exp_thermalling_sink();
     }
 
     _prev_update_time = AP_HAL::micros64();
@@ -512,7 +499,7 @@ float SoaringController::get_yaw() const
     return _ahrs.yaw;
 }
 
-float SoaringController::calculate_aircraft_sinkrate(float phi, float aspd) const
+float SoaringController::calculate_aircraft_sinkrate(float phi, float aspd)
 {
     return _vario.calculate_aircraft_sinkrate(phi, polar_K, polar_CD0, polar_B);
 }
@@ -527,21 +514,25 @@ bool SoaringController::is_controlling_roll()
 {
     // Only the POMDP algorithm sets target roll directly.
     // The other method uses waypoints and the built-in navigation controller.
-    return _pomdsoar.pomdp_on;
+    return _pomdsoar.healthy();
 }
 
-void SoaringController::soaring_policy_computation()
+bool SoaringController::planning_init()
 {
-    if (_pomdsoar.pomdp_on)
-    {
-        _pomdsoar.update_solver();
+    gcs().send_text(MAV_SEVERITY_INFO, "Planning init");
+
+    if (!soar_active) {
+        // Must reboot to enable planning thread
+        return true;
     }
-}
 
+    if (!_pomdsoar.planning_init()) {
+        return false;
+    }
 
-void SoaringController::stop_computation()
-{
-    _pomdsoar.stop_computations();
+    gcs().send_text(MAV_SEVERITY_INFO, "POMDP init");
+
+    return true;
 }
 
 
@@ -554,13 +545,6 @@ float SoaringController::get_roll() const
 {
     return _ahrs.roll;
 }
-
-
-float SoaringController::get_rate() const
-{
-    return _ahrs.get_gyro().x;
-}
-
 
 void SoaringController::get_position(Location& loc)
 {

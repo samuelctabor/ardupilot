@@ -60,7 +60,7 @@ class SoaringController {
     LowPassFilter<float> _position_y_filter;
     
     friend class POMDSoarAlgorithm;
-    float calculate_aircraft_sinkrate(float phi, float aspd) const;
+    float calculate_aircraft_sinkrate(float phi, float aspd);
     POMDSoarAlgorithm _pomdsoar;
 
 protected:
@@ -83,7 +83,7 @@ protected:
     AP_Int8 exit_mode;
 
 public:
-    SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController, AP_Float &scaling_speed);
+    SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms, AP_RollController &rollController);
 
     enum class LoiterStatus {
         DISABLED,
@@ -102,6 +102,7 @@ public:
     };
 
     AP_Float max_radius;
+    bool planning_init();
 
     // this supports the TECS_* user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -134,7 +135,6 @@ public:
 
     bool is_active() const {return _last_update_status>=SoaringController::ActiveStatus::MANUAL_MODE_CHANGE;};
 
-    void soaring_policy_computation();
     bool is_controlling_roll();
     float get_roll_cmd();
 
@@ -151,7 +151,6 @@ private:
     void get_relative_position_wrt_home(Vector2f &vec) const;
     float get_aspd() const;
     void get_position(Location& loc);
-    float get_rate() const;
     float get_roll() const;
     float get_eas2tas() const;
     float get_yaw() const;

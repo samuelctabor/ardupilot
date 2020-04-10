@@ -197,6 +197,13 @@ void Plane::startup_ground(void)
     g2.scripting.init();
 #endif // ENABLE_SCRIPTING
 
+#ifdef SOARING_ENABLED
+    if (!g2.soaring_controller.planning_init()) {
+        gcs().send_text(MAV_SEVERITY_ERROR, "Soaring planner failed to start");
+    }
+
+#endif // SOARING_ENABLED
+
     // reset last heartbeat time, so we don't trigger failsafe on slow
     // startup
     failsafe.last_heartbeat_ms = millis();
