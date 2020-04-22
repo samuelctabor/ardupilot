@@ -12,7 +12,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
-#include "ExtendedKalmanFilter.h"
+#include "EKF_Thermal.h"
 #include "Variometer.h"
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
 
@@ -24,7 +24,7 @@
 
 
 class SoaringController {
-    ExtendedKalmanFilter _ekf{};
+    EKF_Thermal _ekf{};
     AP_AHRS &_ahrs;
     AP_SpdHgtControl &_spdHgt;
     Variometer _vario;

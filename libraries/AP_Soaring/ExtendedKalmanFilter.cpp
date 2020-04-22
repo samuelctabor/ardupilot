@@ -1,26 +1,8 @@
 #include "ExtendedKalmanFilter.h"
 #include "AP_Math/matrixN.h"
 
-
-float ExtendedKalmanFilter::measurementpredandjacobian(VectorN<float,N> &A, const VectorN<float,M> &U)
-{
-    // This function computes the Jacobian using equations from
-    // analytical derivation of Gaussian updraft distribution
-    // This expression gets used lots
-    float expon = expf(- (powf(X[2]-U[2], 2) + powf(X[3]-U[3], 2)) / powf(X[1], 2));
-    // Expected measurement
-    float w = X[0] * expon;
-
-    // Elements of the Jacobian
-    A[0] = expon;
-    A[1] = 2 * X[0] * ((powf(X[2]-U[2],2) + powf(X[3]-U[3],2)) / powf(X[1],3)) * expon;
-    A[2] = -2 * (X[0] * (X[2]-U[2]) / powf(X[1],2)) * expon;
-    A[3] = -2 * (X[0] * (X[3]-U[3]) / powf(X[1],2)) * expon;
-    return w;
-}
-
-
-void ExtendedKalmanFilter::reset(const VectorN<float,N> &x, const MatrixN<float,N> &p, const MatrixN<float,N> q, float r)
+template <uint8_t N, uint8_t M>
+void ExtendedKalmanFilter<N,M>::reset(const VectorN<float,N> &x, const MatrixN<float,N> &p, const MatrixN<float,N> q, float r)
 {
     P = p;
     X = x;
@@ -28,8 +10,8 @@ void ExtendedKalmanFilter::reset(const VectorN<float,N> &x, const MatrixN<float,
     R = r;
 }
 
-
-void ExtendedKalmanFilter::update(float z, const VectorN<float,M> &U)
+template <uint8_t N, uint8_t M>
+void ExtendedKalmanFilter<N,M>::update(float z, const VectorN<float,M> &U)
 {
     MatrixN<float,N> tempM;
     VectorN<float,N> H;
@@ -68,8 +50,8 @@ void ExtendedKalmanFilter::update(float z, const VectorN<float,M> &U)
     // X = x1 + K * (z - z1);
     X += K * (z - z1);
 
-    // Make sure X[1] stays positive.
-    X[1] = X[1]>40.0 ? X[1]: 40.0;
+    // Make sure values stay sensible.
+    state_limits();
 
     // Correct the covariance too.
     // LINE 46
@@ -81,9 +63,9 @@ void ExtendedKalmanFilter::update(float z, const VectorN<float,M> &U)
     P.force_symmetry();
 }
 
-void ExtendedKalmanFilter::state_update(const VectorN<float,M> &U)
-{
-    // Estimate new state from old.
-    X[2] += U[0];
-    X[3] += U[1];
-}
+template void ExtendedKalmanFilter<4,4>::reset(const VectorN<float,4> &x, const MatrixN<float,4> &p, const MatrixN<float,4> q, float r);
+template void ExtendedKalmanFilter<4,4>::update(float z, const VectorN<float,4> &U);
+
+template void ExtendedKalmanFilter<2,3>::reset(const VectorN<float,2> &x, const MatrixN<float,2> &p, const MatrixN<float,2> q, float r);
+template void ExtendedKalmanFilter<2,3>::update(float z, const VectorN<float,3> &U);
+

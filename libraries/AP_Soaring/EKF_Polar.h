@@ -19,23 +19,17 @@
 #pragma once
 
 #include <AP_Math/matrixN.h>
+#include "ExtendedKalmanFilter.h"
 
-class EKF_Polar {
-public:
-    EKF_Polar(void) {}
+class EKF_Polar :  public ExtendedKalmanFilter<2,3> {
 
     static constexpr const uint8_t N = 2;
     static constexpr const uint8_t M = 3;
 
-    VectorN<float,N> X;
-    MatrixN<float,N> P;
-    MatrixN<float,N> Q;
-    float R;
-    void reset(const VectorN<float,N> &x, const MatrixN<float,N> &p, const MatrixN<float,N> q, float r);
-    void update(float z, const VectorN<float,M> &U);
-
 private:
-    float measurementpredandjacobian(VectorN<float,N> &A, const VectorN<float,M> &U);
+    float measurementpredandjacobian(VectorN<float,N> &A, const VectorN<float,M> &U) override;
 
-    void state_update(const VectorN<float,M> &U);
+    void state_update(const VectorN<float,M> &U) override;
+
+    void state_limits(void) override;
 };
