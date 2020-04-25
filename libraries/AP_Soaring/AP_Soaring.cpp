@@ -139,6 +139,13 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Units: deg
     AP_GROUPINFO("THML_BANK", 18, SoaringController, thermal_bank, 30.0),
 
+    // @Param: POLAR_LEARN
+    // @DisplayName: Enable learning of the glide polar
+    // @Description: When set to 1, learn the Cd0 and B parameters.
+    // @Range: 0 1
+    // @User: Advanced
+    AP_GROUPINFO("POLAR_LEARN", 19, SoaringController, polar_learn, 0),
+
     AP_GROUPEND
 };
 
@@ -372,6 +379,8 @@ void SoaringController::update_cruising()
 void SoaringController::update_vario()
 {
     _vario.update(thermal_bank);
+
+    _vario.update_polar_learning(polar_learn, _throttle_suppressed, _spdHgt.get_target_accel());
 }
 
 
