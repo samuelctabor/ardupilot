@@ -11,7 +11,6 @@ const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {
     // @Param: ENABLE
     // @DisplayName: Is the POMDSoar algorithm on?
     // @Description: If 1, the soaring controller uses the POMDSoar algorithm. If 0, the soaring controller uses the ArduSoar algorithm.
-    // @Units: boolean
     // @Range: 0 1
     // @User: Advanced
     AP_GROUPINFO_FLAGS("ENABLE", 1, POMDSoarAlgorithm, pomdp_on, 0, AP_PARAM_FLAG_ENABLE),
@@ -19,7 +18,6 @@ const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {
     // @Param: N
     // @DisplayName: Number of samples per action trajectory used by POMDSoar
     // @Description: Number of samples per action trajectory used by POMDSoar.
-    // @Units: samples
     // @Range: 0 100
     // @User: Advanced
     AP_GROUPINFO("N", 2, POMDSoarAlgorithm, pomdp_n, 10),
@@ -27,7 +25,6 @@ const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {
     // @Param: K
     // @DisplayName: Number of POMDP sample points per 1 second of an action's trajectory used by POMDSoar.
     // @Description: Number of POMDP sample points per 1 second of an action's trajectory used by POMDSoar.
-    // @Units: samples
     // @Range: 0 100
     // @User: Advanced
     AP_GROUPINFO("K", 3, POMDSoarAlgorithm, pomdp_k, 5),
@@ -35,15 +32,15 @@ const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {
     // @Param: HORI
     // @DisplayName: POMDP planning horizon used by POMDSoar.
     // @Description: POMDP planning horizon used by POMDSoar.
-    // @Units: seconds
+    // @Units: s
     // @Range: 0 1000
     // @User: Advanced
     AP_GROUPINFO("HORI", 4, POMDSoarAlgorithm, pomdp_hori, 4.0),
 
     // @Param: STEP
-    // @DisplayName:POMDP planning step solve time
+    // @DisplayName: POMDP planning step solve time
     // @Description: The amount of computation time the POMDP solver has for computing the next action
-    // @Units: seconds
+    // @Units: s
     // @Range: 0 1000
     // @User: Advanced
     AP_GROUPINFO("STEP", 5, POMDSoarAlgorithm, pomdp_step_t, 1),
@@ -51,34 +48,30 @@ const AP_Param::GroupInfo POMDSoarAlgorithm::var_info[] = {
     // @Param: N_ACT
     // @DisplayName: POMDP number of actions
     // @Description: Number of actions in the POMDP used by POMDSoar. The roll angle input commands corresponding to actions are endpoints of (N_ACT-1) equal intervals between ROLL2 and ROLL1 (inclusive).
-    // @Units: seconds
     // @Range: 1 254
     // @User: Advanced
-    AP_GROUPINFO("N_ACT", 9, POMDSoarAlgorithm, pomdp_n_actions, 2),
+    AP_GROUPINFO("N_ACT", 6, POMDSoarAlgorithm, pomdp_n_actions, 2),
 
     // @Param: PTH
     // @DisplayName: POMDSoar's threshold on tr(P) for switching between explore and max-lift modes.
     // @Description: POMDSoar's threshold on the P matrix trace for switching between explore and max-lift modes.
-    // @Units:
     // @Range: 0 10000
     // @User: Advanced
-    AP_GROUPINFO("PTH", 10, POMDSoarAlgorithm, pomdp_pth, 50),
+    AP_GROUPINFO("PTH", 7, POMDSoarAlgorithm, pomdp_pth, 50),
 
     // @Param: EXT
     // @DisplayName: Enable action duration extension in POMDSoar's max-lift mode compared to the explore mode
     // @Description: 0 = off, > 1 = multiplicative factor by which to extend action duration in max-lift compared to the explore mode.
-    // @Units:
     // @Range: 0 10000
     // @User: Advanced
-    AP_GROUPINFO("EXT", 11, POMDSoarAlgorithm, pomdp_extend, 0),
+    AP_GROUPINFO("EXT", 8, POMDSoarAlgorithm, pomdp_extend, 0),
 
     // @Param: PLAN
     // @DisplayName: Enable deterministic trajectory planning mode for the POMDP
     // @Description: Enable deterministic trajectory planning mode for the POMDP. 0 = off, 1 on.
-    // @Units:
     // @Range: 0 1
     // @User: Advanced
-    AP_GROUPINFO("PLAN", 12, POMDSoarAlgorithm, pomdp_plan_mode, 0),
+    AP_GROUPINFO("PLAN", 9, POMDSoarAlgorithm, pomdp_plan_mode, 0),
 
     AP_GROUPEND
 };

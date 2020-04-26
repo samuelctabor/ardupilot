@@ -135,7 +135,8 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("MAX_RADIUS", 17, SoaringController, max_radius, -1),
 
-    //POMDP params.
+    // @Group: POMD_
+    // @Path: POMDP_Soar.cpp
     AP_SUBGROUPINFO(_pomdsoar, "POMD_", 18, SoaringController, POMDSoarAlgorithm),
 
     AP_GROUPEND
