@@ -158,12 +158,6 @@ void POMDSoarAlgorithm::update_solver()
     }
 }
 
-
-void POMDSoarAlgorithm::update_solver_test()
-{
-    _solver.update_test();
-}
-
 float POMDSoarAlgorithm::get_action()
 {
     return _pomdp_roll_cmd * 100;
@@ -267,6 +261,12 @@ bool POMDSoarAlgorithm::healthy()
     return pomdp_on && (AP_HAL::micros64() - _start_time_us) < 200000;
 }
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
+void POMDSoarAlgorithm::update_solver_test()
+{
+    _solver.update_test();
+}
 
 void POMDSoarAlgorithm::run_tests()
 {
@@ -328,3 +328,5 @@ void POMDSoarAlgorithm::run_tests()
         break;
     }
 }
+
+#endif

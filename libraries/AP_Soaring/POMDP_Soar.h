@@ -57,7 +57,9 @@ public:
     void update_solver_test();
     float get_action();
     void update_thermalling(const Location &current_loc);
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     void run_tests();
+#endif
     bool planning_init();
     bool healthy();
 

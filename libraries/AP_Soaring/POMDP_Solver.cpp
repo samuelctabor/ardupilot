@@ -272,6 +272,19 @@ void PomdpSolver::update()
     _running = false;
 }
 
+void PomdpSolver::fill_random_array()
+{
+    float cov[4][4];
+    float mean[4] = { 0, 0, 0, 0 };
+    cov[0][0] = 1;
+    cov[1][1] = 1;
+    cov[2][2] = 1;
+    cov[3][3] = 1;
+    multivariate_normal_fill(_s, mean, cov, MAX_GAUSS_SAMPLES);
+}
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
 void PomdpSolver::run_exp_test(unsigned n)
 {
     for(unsigned i=0; i < n; i++)
@@ -294,19 +307,6 @@ void PomdpSolver::run_fast_exp_test(unsigned n)
         _dummy[3] = EXP(_s[i % MAX_GAUSS_SAMPLES][3]);
     }
 }
-
-
-void PomdpSolver::fill_random_array()
-{
-    float cov[4][4];
-    float mean[4] = { 0, 0, 0, 0 };
-    cov[0][0] = 1;
-    cov[1][1] = 1;
-    cov[2][2] = 1;
-    cov[3][3] = 1;
-    multivariate_normal_fill(_s, mean, cov, MAX_GAUSS_SAMPLES);
-}
-
 
 void PomdpSolver::run_rnd_test(unsigned n)
 {
@@ -421,3 +421,4 @@ void PomdpSolver::update_test() {
 }
 
 
+#endif

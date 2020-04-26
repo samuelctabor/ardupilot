@@ -93,9 +93,11 @@ public:
     float get_action_Q(int i) { return _Q[i]; }
 
     bool running() { return _running;  }
+    void fill_random_array();
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     void run_exp_test(unsigned n);
     void run_fast_exp_test(unsigned n);
-    void fill_random_array();
     void run_rnd_test(unsigned n);
     void run_multivariate_normal_sample_test(unsigned n);
     void run_trig_box_muller_test(unsigned n);
@@ -105,4 +107,5 @@ public:
     void update_random_buffer(unsigned n, MatrixN<float, 4> &cov, bool reset);
     void update_test();
     unsigned update_test_counter = 0;
+#endif
 };
