@@ -2776,6 +2776,53 @@ class AutoTestPlane(AutoTest):
             want_result=mavutil.mavlink.MAV_RESULT_DENIED
         )
 
+    def fly_polar_learn(self):
+
+        model="plane-soaring"
+
+        additional_params = os.path.join(testdir, self.current_test_name_directory, 'glide-polar.parm')
+        defaults_filepath = self.model_defaults_filepath("ArduPlane",model)
+        defaults_filepath.extend([additional_params])
+
+        self.customise_SITL_commandline([],
+                                        model=model,
+                                        defaults_filepath=defaults_filepath)
+
+        self.load_mission('CMAC-glidepolar.txt')
+
+        self.set_current_waypoint(1)
+        self.change_mode('AUTO')
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+
+        # Enable thermalling RC
+        rc_chan = 0
+        for i in range(8):
+            rcx_option = self.get_parameter('RC{0}_OPTION'.format(i+1))
+            if rcx_option==88:
+                rc_chan = i+1;
+                break
+
+        if rc_chan==0:
+            raise NotAchievedException("Did not find soaring enable channel option.")
+
+        self.set_rc(rc_chan, 1500)
+
+        self.wait_waypoint(12,12,timeout=1200,max_dist=120)
+
+
+        # Check that parameters have improved.
+        polarCD0 = self.get_parameter('SOAR_POLAR_CD0')
+        polarB   = self.get_parameter('SOAR_POLAR_B')
+
+        if polarCD0<0.045 or polarB<0.04 or polarCD0>0.055 or polarB>0.05:
+           raise NotAchievedException("Failed to learn glide polar parameters (%3.3f %3.3f)" % (polarCD0, polarB))
+
+        # Disarm
+        self.disarm_vehicle()
+
+        self.progress("Mission OK")
+
     def tests(self):
         '''return list of all tests'''
         ret = super(AutoTestPlane, self).tests()
@@ -2956,6 +3003,10 @@ class AutoTestPlane(AutoTest):
             ("LogUpload",
              "Log upload",
              self.log_upload),
+
+            ("GlidePolar",
+             "Glide polar learning",
+             self.fly_polar_learn),
         ])
         return ret
 
