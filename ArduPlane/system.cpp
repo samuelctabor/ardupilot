@@ -197,7 +197,7 @@ void Plane::startup_ground(void)
     g2.scripting.init();
 #endif // ENABLE_SCRIPTING
 
-#ifdef SOARING_ENABLED
+#if SOARING_ENABLED == ENABLED
     if (!g2.soaring_controller.planning_init()) {
         gcs().send_text(MAV_SEVERITY_ERROR, "Soaring planner failed to start");
     }
