@@ -96,6 +96,10 @@ public:
         AP_Int8  autotune_level;
         AP_Int8  stall_prevention;
         AP_Int16 loiter_radius;
+        AP_Int16 alt_offset;
+        AP_Int8 terrain_follow;
+        AP_Float glide_slope_threshold;
+        AP_Int16 glide_slope_min;
 
         struct Rangefinder_State {
             bool in_range:1;

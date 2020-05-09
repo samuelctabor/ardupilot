@@ -57,7 +57,7 @@ void Plane::set_next_WP(const struct Location &loc)
 
     // used to control FBW and limit the rate of climb
     // -----------------------------------------------
-    set_target_altitude_location(next_WP_loc);
+    altitudePlanner.set_target_altitude_location(next_WP_loc);
 
     // zero out our loiter vals to watch for missed waypoints
     loiter_angle_reset();
@@ -84,7 +84,7 @@ void Plane::set_guided_WP(void)
 
     // used to control FBW and limit the rate of climb
     // -----------------------------------------------
-    set_target_altitude_current();
+    altitudePlanner.set_target_altitude_current(current_loc);
 
     setup_glide_slope();
     setup_turn_angle();

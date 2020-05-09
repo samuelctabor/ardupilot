@@ -227,7 +227,7 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
 
         } else {
             // use rangefinder to correct if possible
-            float height = height_above_target() - rangefinder_correction();
+            float height = altitudePlanner.height_above_target(current_loc, next_WP_loc) - rangefinder_correction();
             // for flare calculations we don't want to use the terrain
             // correction as otherwise we will flare early on rising
             // ground
@@ -311,7 +311,7 @@ void Plane::do_RTL(int32_t rtl_altitude)
     prev_WP_loc = current_loc;
     next_WP_loc = rally.calc_best_rally_or_home_location(current_loc, rtl_altitude);
     setup_terrain_target_alt(next_WP_loc);
-    set_target_altitude_location(next_WP_loc);
+    altitudePlanner.set_target_altitude_location(next_WP_loc);
 
     if (aparm.loiter_radius < 0) {
         loiter.direction = -1;

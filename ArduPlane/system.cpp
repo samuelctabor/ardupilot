@@ -162,6 +162,10 @@ void Plane::init_ardupilot()
 
     // disable safety if requested
     BoardConfig.init_safety();
+
+#if AP_TERRAIN_AVAILABLE
+    altitudePlanner.set_terrain(&terrain);
+#endif
 }
 
 //********************************************************************************

@@ -319,13 +319,13 @@ void Plane::update_cruise()
 void Plane::update_fbwb_speed_height(void)
 {
     uint32_t now = micros();
-    if (now - target_altitude.last_elev_check_us >= 100000) {
+    if (now - fbwb_altitude.last_elev_check_us >= 100000) {
         // we don't run this on every loop as it would give too small granularity on quadplanes at 300Hz, and
         // give below 1cm altitude change, which would result in no climb or descent
-        float dt = (now - target_altitude.last_elev_check_us) * 1.0e-6;
+        float dt = (now - fbwb_altitude.last_elev_check_us) * 1.0e-6;
         dt = constrain_float(dt, 0.1, 0.15);
 
-        target_altitude.last_elev_check_us = now;
+        fbwb_altitude.last_elev_check_us = now;
         
         float elevator_input = channel_pitch->get_control_in() / 4500.0f;
     
@@ -334,27 +334,27 @@ void Plane::update_fbwb_speed_height(void)
         }
 
         int32_t alt_change_cm = g.flybywire_climb_rate * elevator_input * dt * 100;
-        change_target_altitude(alt_change_cm);
+        altitudePlanner.change_target_altitude(alt_change_cm);
         
-        if (is_zero(elevator_input) && !is_zero(target_altitude.last_elevator_input)) {
+        if (is_zero(elevator_input) && !is_zero(fbwb_altitude.last_elevator_input)) {
             // the user has just released the elevator, lock in
             // the current altitude
-            set_target_altitude_current();
+            altitudePlanner.set_target_altitude_current(current_loc);
         }
 
 #if SOARING_ENABLED == ENABLED
         if (g2.soaring_controller.is_active() && g2.soaring_controller.get_throttle_suppressed()) {
             // we're in soaring mode with throttle suppressed
-            set_target_altitude_current();;
+            altitudePlanner.set_target_altitude_current(current_loc);;
         }
 #endif
         
-        target_altitude.last_elevator_input = elevator_input;
+        fbwb_altitude.last_elevator_input = elevator_input;
     }
     
-    check_fbwb_minimum_altitude();
+    altitudePlanner.check_fbwb_minimum_altitude(g.FBWB_min_altitude_cm);
 
-    altitude_error_cm = calc_altitude_error_cm();
+    altitude_error_cm = altitudePlanner.calc_altitude_error_cm(current_loc);
     
     calc_throttle();
     calc_nav_pitch();
