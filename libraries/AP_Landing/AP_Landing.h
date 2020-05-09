@@ -29,7 +29,7 @@ class AP_Landing {
     friend class AP_Landing_Deepstall;
 
 public:
-    FUNCTOR_TYPEDEF(set_target_altitude_proportion_fn_t, void, const Location&, float);
+    FUNCTOR_TYPEDEF(set_target_altitude_proportion_fn_t, void, const Location&, float, int32_t, bool);
     FUNCTOR_TYPEDEF(constrain_target_altitude_location_fn_t, void, const Location&, const Location&);
     FUNCTOR_TYPEDEF(adjusted_altitude_cm_fn_t, int32_t);
     FUNCTOR_TYPEDEF(adjusted_relative_altitude_cm_fn_t, int32_t);
@@ -195,4 +195,6 @@ private:
     bool type_slope_is_on_approach(void) const;
     bool type_slope_is_expecting_impact(void) const;
     bool type_slope_is_throttle_suppressed(void) const;
+
+    float type_slope_get_target_altitude(const Location &current_loc);
 };
