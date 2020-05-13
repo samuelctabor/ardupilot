@@ -375,6 +375,12 @@ const AP_Param::Info Rover::var_info[] = {
     GOBJECT(osd, "OSD", AP_OSD),
 #endif
 
+#if MISSION_RELATIVE == ENABLED
+    // @Group: MIS__REL_
+    // @Path: ../libraries/AP_Mission/AP_Mission_Relative.cpp
+    GOBJECT(mission_relative, "MIS__REL_", AP_Mission_Relative),
+#endif
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     { AP_PARAM_GROUP, "", Parameters::k_param_vehicle, (const void *)&rover, {group_info : AP_Vehicle::var_info} },

@@ -210,6 +210,7 @@ public:
         k_param_lights_steps,
         k_param_pilot_speed_dn,
 
+        k_param_mission_relative = 256,
         k_param_vehicle = 257, // vehicle common block of parameters
     };
 

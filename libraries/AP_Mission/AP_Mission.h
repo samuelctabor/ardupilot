@@ -19,7 +19,9 @@
 #include <AP_Common/Location.h>
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
-
+#if MISSION_RELATIVE == ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h>
+#endif
 // definitions
 #define AP_MISSION_EEPROM_VERSION           0x65AE  // version number stored in first four bytes of eeprom.  increment this by one when eeprom format is changed
 #define AP_MISSION_EEPROM_COMMAND_SIZE      15      // size in bytes of all mission commands
@@ -46,6 +48,11 @@
 /// @class    AP_Mission
 /// @brief    Object managing Mission
 class AP_Mission {
+
+#if MISSION_RELATIVE == ENABLED
+    friend class AP_Mission_Relative;
+    AP_Mission_Relative mission_relative;
+#endif
 
 public:
     // jump command structure

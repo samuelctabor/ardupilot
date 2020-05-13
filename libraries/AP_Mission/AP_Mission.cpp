@@ -5,6 +5,9 @@
 #include <AP_Terrain/AP_Terrain.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_AHRS/AP_AHRS.h>
+#if MISSION_RELATIVE == ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h>
+#endif
 
 const AP_Param::GroupInfo AP_Mission::var_info[] = {
 
@@ -74,6 +77,10 @@ void AP_Mission::start()
         // on failure set mission complete
         complete();
     }
+
+#if MISSION_RELATIVE == ENABLED
+    mission_relative.memorize(); // memorize location and attitudes where Mode AUTO was switched on (Basepoint)
+#endif
 }
 
 /// stop - stops mission execution.  subsequent calls to update() will have no effect until the mission is started or resumed
@@ -1567,6 +1574,10 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
             // save separate previous nav command index if it contains lat,long,alt
             if (!(cmd.content.location.lat == 0 && cmd.content.location.lng == 0)) {
                 _prev_nav_cmd_wp_index = _nav_cmd.index;
+#if MISSION_RELATIVE == ENABLED
+                // move Waypoint-Location according to Basepoint and parameters
+                mission_relative.moveloc(cmd.content.location,cmd.id);
+#endif
             }
             // set current navigation command and start it
             _nav_cmd = cmd;
@@ -1592,6 +1603,11 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
         }else{
             // set current do command and start it (if not already set)
             if (!_flags.do_cmd_loaded) {
+#if MISSION_RELATIVE == ENABLED
+                if (cmd.id == MAV_CMD_DO_LAND_START) {
+                    mission_relative.set_no_translation(); // no translation of landing-locations
+                }
+#endif
                 _do_cmd = cmd;
                 _flags.do_cmd_loaded = true;
                 start_command(_do_cmd);

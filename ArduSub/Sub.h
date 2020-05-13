@@ -46,6 +46,9 @@
 #include <AP_InertialSensor/AP_InertialSensor.h>  // ArduPilot Mega Inertial Sensor (accel & gyro) Library
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Mission/AP_Mission.h>         // Mission command library
+#if MISSION_RELATIVE == ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h> // Mission translation/rotation library
+#endif
 #include <AC_AttitudeControl/AC_AttitudeControl_Sub.h> // Attitude control library
 #include <AC_AttitudeControl/AC_PosControl_Sub.h>      // Position control library
 #include <AP_Motors/AP_Motors.h>          // AP Motors library
@@ -172,6 +175,11 @@ private:
             FUNCTOR_BIND_MEMBER(&Sub::start_command, bool, const AP_Mission::Mission_Command &),
             FUNCTOR_BIND_MEMBER(&Sub::verify_command_callback, bool, const AP_Mission::Mission_Command &),
             FUNCTOR_BIND_MEMBER(&Sub::exit_mission, void)};
+
+#if MISSION_RELATIVE == ENABLED
+    // Mission_Relative library
+    AP_Mission_Relative mission_relative;
+#endif
 
     // Optical flow sensor
 #if OPTFLOW == ENABLED

@@ -1093,6 +1093,12 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: mode_takeoff.cpp
     GOBJECT(mode_takeoff, "TKOFF_", ModeTakeoff),
 
+#if MISSION_RELATIVE == ENABLED
+    // @Group: MIS__REL_
+    // @Path: ../libraries/AP_Mission/AP_Mission_Relative.cpp
+    GOBJECT(mission_relative, "MIR_", AP_Mission_Relative),
+#endif
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     { AP_PARAM_GROUP, "", Parameters::k_param_vehicle, (const void *)&plane, {group_info : AP_Vehicle::var_info} },

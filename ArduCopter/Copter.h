@@ -41,6 +41,9 @@
 #include <AP_InertialSensor/AP_InertialSensor.h>  // ArduPilot Mega Inertial Sensor (accel & gyro) Library
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Mission/AP_Mission.h>     // Mission command library
+#if MISSION_RELATIVE == ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h> // Mission translation/rotation library
+#endif
 #include <AC_AttitudeControl/AC_AttitudeControl_Multi.h> // Attitude control library
 #include <AC_AttitudeControl/AC_AttitudeControl_Heli.h> // Attitude control library for traditional helicopter
 #include <AC_AttitudeControl/AC_PosControl.h>      // Position control library
@@ -532,6 +535,11 @@ private:
 
     // avoidance of adsb enabled vehicles (normally manned vehicles)
     AP_Avoidance_Copter avoidance_adsb{adsb};
+#endif
+
+#if MISSION_RELATIVE == ENABLED
+    // Mission_Relative library
+    AP_Mission_Relative mission_relative;
 #endif
 
     // last valid RC input time

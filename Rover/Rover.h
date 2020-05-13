@@ -38,6 +38,9 @@
 #include <AP_L1_Control/AP_L1_Control.h>
 #include <AP_Math/AP_Math.h>                        // ArduPilot Mega Vector/Matrix math Library
 #include <AP_Mission/AP_Mission.h>                  // Mission command library
+#if MISSION_RELATIVE == ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h>     // Mission translation/rotation library
+#endif
 #include <AP_Mount/AP_Mount.h>                      // Camera/Antenna mount
 #include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_NavEKF3/AP_NavEKF3.h>
@@ -188,6 +191,11 @@ private:
     // Camera/Antenna mount tracking and stabilisation stuff
 #if MOUNT == ENABLED
     AP_Mount camera_mount;
+#endif
+
+#if MISSION_RELATIVE == ENABLED
+    // Mission_Relative library
+    AP_Mission_Relative mission_relative;
 #endif
 
     // true if initialisation has completed

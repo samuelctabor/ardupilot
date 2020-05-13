@@ -308,3 +308,14 @@
 #ifndef LANDING_GEAR_ENABLED
  #define LANDING_GEAR_ENABLED !HAL_MINIMIZE_FEATURES
 #endif
+
+//////////////////////////////////////////////////////////////////////////////
+// translate/rotate Mission
+//
+#ifndef MISSION_RELATIVE
+  #define MISSION_RELATIVE !HAL_MINIMIZE_FEATURES
+#endif
+
+#ifndef AP_MISSION_RELATIVE_NO_TRANSLATION_RADIUS_DEFAULT
+    #define AP_MISSION_RELATIVE_NO_TRANSLATION_RADIUS_DEFAULT 100
+#endif
