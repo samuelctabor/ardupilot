@@ -14,12 +14,7 @@
  */
 #pragma once
 
-#include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AP_Math/AP_Math.h>
-#include <AP_Common/AP_Common.h>
-#include <AP_Common/Location.h>
 #include <AP_Param/AP_Param.h>
-#include <AP_Mission/AP_Mission.h> //################ ????????????????
 
 // definitions
 #ifndef AP_MISSION_RELATIVE_NO_TRANSLATION_RADIUS_DEFAULT
@@ -41,21 +36,26 @@ class AP_Mission_Relative
     friend class AP_Mission;
 
 public:
-    // constructor
-    AP_Mission_Relative()
-    {
-        AP_Param::setup_object_defaults(this, var_info); // load parameter defaults
-        restart_behaviour = Restart_Behaviour::RESTART_NOT_TRANSLATED;
-    };
+    AP_Mission_Relative(void);
+
+    /* Do not allow copies */
+    AP_Mission_Relative(const AP_Mission_Relative &other) = delete;
+    AP_Mission_Relative &operator=(const AP_Mission_Relative&) = delete;
+
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
-protected:
+    static AP_Mission_Relative *get_singleton(void) {
+        return _singleton;
+    }
+
+private:
+
+    static AP_Mission_Relative *_singleton;
+
     AP_Int8     _kind_of_move;          // defines the kind of move (translation/rotation) of the mission when entering Auto mode
     AP_Int8     _rel_options;           // bitmask options for special behaviour at translation
     AP_Float    _no_translation_radius; // distance in [m] from HomeLocation wherein a translation of a Relative Mission will be ignored
-
-private:
 
     enum class Restart_Behaviour {
         RESTART_NOT_TRANSLATED,
@@ -101,11 +101,8 @@ private:
     /// rotate - if the Command is a Waypoint the Location will be rotated according to Parameters
     void rotate(Location& loc);
 
-    // check if command is a landing type command.  Asside the obvious, MAV_CMD_DO_PARACHUTE is considered a type of landing
-//    bool is_landing_type_cmd(uint16_t id) const; ################################ kann ich das nutzen?
-
 };
 
 namespace AP {
-    AP_Mission_Relative *mission_relative();
+    AP_Mission_Relative &mission_relative();
 };

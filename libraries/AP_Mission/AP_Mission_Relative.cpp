@@ -29,12 +29,15 @@
  */
 
 #include <AP_Math/AP_Math.h>
-#include <AP_HAL/AP_HAL.h>
 #include <AP_Common/Location.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <GCS_MAVLink/GCS.h>
-#include <AP_Mission/AP_Mission.h>
+
 #include "AP_Mission_Relative.h"
+
+//extern const AP_HAL::HAL& hal; ### ?
+
+AP_Mission_Relative *AP_Mission_Relative::_singleton;
 
 const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
 
@@ -63,15 +66,28 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
     AP_GROUPEND
 };
 
+// constructor
+AP_Mission_Relative::AP_Mission_Relative(void)
+{
+    AP_Param::setup_object_defaults(this, var_info); // load parameter defaults
+/* ### ?
+    if (_singleton != nullptr) {
+        AP_HAL::panic("AP_Mission_Relative must be singleton");
+    }
+*/
+    _singleton = this;
+
+    restart_behaviour = Restart_Behaviour::RESTART_NOT_TRANSLATED;
+};
+
 void AP_Mission_Relative::memorize()
 {
     gcs().send_text(MAV_SEVERITY_DEBUG, "AP_Mission_relative::memorize");
 
-    gcs().send_text(MAV_SEVERITY_DEBUG, "_no_translation_radius: %f", (float)_no_translation_radius);
-    gcs().send_text(MAV_SEVERITY_DEBUG, "_kind_of_move: %i", (int)_kind_of_move);
-    gcs().send_text(MAV_SEVERITY_DEBUG, "_rel_options: %i", (int)_rel_options);
+    gcs().send_text(MAV_SEVERITY_DEBUG, "_no_translation_radius : %f", (float)_no_translation_radius);
+    gcs().send_text(MAV_SEVERITY_DEBUG, "_kind_of_move : %i", (int)_kind_of_move);
+    gcs().send_text(MAV_SEVERITY_DEBUG, "_rel_options : %i", (int)_rel_options);
 
-    _kind_of_move = 2;//### just because the parameters are not working yet
     switch (_kind_of_move) { // fix the behaviour at restart of the Mission
     case 0:
         restart_behaviour = Restart_Behaviour::RESTART_NOT_TRANSLATED;
@@ -235,4 +251,10 @@ void AP_Mission_Relative::rotate(Location& loc)
     loc.lat = _basepoint_loc.lat + tmprot.lat;
     loc.lng = _basepoint_loc.lng + tmprot.lng;
 
+}
+
+namespace AP {
+    AP_Mission_Relative &mission_relative() {
+        return *AP_Mission_Relative::get_singleton();
+    }
 }

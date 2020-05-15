@@ -347,7 +347,6 @@ public:
         // 254,255: reserved
 
         k_param_vehicle = 257, // vehicle common block of parameters
-        k_param_mission_relative = 258,
     };
 
     AP_Int16 format_version;
@@ -508,6 +507,12 @@ public:
 
     // button reporting library
     AP_Button *button_ptr;
+
+#if MISSION_RELATIVE == ENABLED
+    // mission_relative library
+    AP_Mission_Relative *mission_relative_ptr;
+#endif
+
 
 #if STATS_ENABLED == ENABLED
     // vehicle statistics
