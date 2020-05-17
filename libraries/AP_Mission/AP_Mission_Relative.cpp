@@ -35,18 +35,9 @@
 
 #include "AP_Mission_Relative.h"
 
-//extern const AP_HAL::HAL& hal; ### ?
-
 AP_Mission_Relative *AP_Mission_Relative::_singleton;
 
 const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
-
-    // @Param: RADIUS
-    // @DisplayName: radius to ignore translation
-    // @Description: Radius around HomeLocation therein translation of Relative Mission will be ignored
-    // @Units: m
-    // @User: Advanced
-    AP_GROUPINFO("RADIUS",  1, AP_Mission_Relative, _no_translation_radius, AP_MISSION_RELATIVE_NO_TRANSLATION_RADIUS_DEFAULT),
 
     // @Param: MOVE
     // @DisplayName: kind of moving the mission
@@ -54,7 +45,14 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
     // @Range: 0 2
     // @Values: 0:No move, 1:PARALLEL translation, 2:additional ROTATION
     // @User: Advanced
-    AP_GROUPINFO("MOVE",  2, AP_Mission_Relative, _kind_of_move, AP_MISSION_RELATIVE_KIND_OF_MOVE_DEFAULT),
+    AP_GROUPINFO_FLAGS("MOVE",  1, AP_Mission_Relative, _kind_of_move, AP_MISSION_RELATIVE_KIND_OF_MOVE_DEFAULT, AP_PARAM_FLAG_ENABLE),
+
+        // @Param: RADIUS
+    // @DisplayName: radius to ignore translation
+    // @Description: Radius around HomeLocation therein translation of Relative Mission will be ignored
+    // @Units: m
+    // @User: Advanced
+    AP_GROUPINFO("RADIUS",  2, AP_Mission_Relative, _no_translation_radius, AP_MISSION_RELATIVE_NO_TRANSLATION_RADIUS_DEFAULT),
 
     // @Param: OPTIONS
     // @DisplayName: selectable options for translation
@@ -70,11 +68,7 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
 AP_Mission_Relative::AP_Mission_Relative(void)
 {
     AP_Param::setup_object_defaults(this, var_info); // load parameter defaults
-/* ### ?
-    if (_singleton != nullptr) {
-        AP_HAL::panic("AP_Mission_Relative must be singleton");
-    }
-*/
+
     _singleton = this;
 
     restart_behaviour = Restart_Behaviour::RESTART_NOT_TRANSLATED;
@@ -224,7 +218,7 @@ void AP_Mission_Relative::translate(Location& loc)
     Location tmp;
     tmp = loc; // before translation
     loc.lat = _basepoint_loc.lat + (loc.lat - _first_wp_loc.lat);
-    // correction of lng based on lat-translation
+    // correction of lng, based on lat-translation
     loc.lng = _basepoint_loc.lng + (loc.lng - _first_wp_loc.lng) / tmp.longitude_scale() * loc.longitude_scale();
 
     if (AP_MISSION_RELATIVE_MASK_USE_ALT_OFFSET & _rel_options) { // do altitude translation

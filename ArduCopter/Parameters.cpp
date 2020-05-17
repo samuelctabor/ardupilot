@@ -715,12 +715,6 @@ const AP_Param::Info Copter::var_info[] = {
     GOBJECT(osd, "OSD", AP_OSD),
 #endif
 
-#if MISSION_RELATIVE == ENABLED
-    // @Group: MIS__REL_
-    // @Path: ../libraries/AP_Mission/AP_Mission_Relative.cpp
-    GOBJECT(mission_relative, "MIS__REL_", AP_Mission_Relative),
-#endif
-
     // @Group:
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),
