@@ -23,8 +23,9 @@
 #endif
 #define AP_MISSION_RELATIVE_KIND_OF_MOVE_DEFAULT    0   // no translation
 #define AP_MISSION_RELATIVE_OPTIONS_DEFAULT         0   // no special options
-#define AP_MISSION_RELATIVE_MASK_SKIP_FIRST_WP  (1<<0)  // Skip first Waypoint altitude at Restart of Mission
-#define AP_MISSION_RELATIVE_MASK_USE_ALT_OFFSET (1<<1)  // Use altitude offset at Restart of Mission for all Waypoints
+#define AP_MISSION_RELATIVE_MASK_SKIP_FIRST_WP       (1<<0)  // skip first Waypoint-altitude at Restart of Mission
+#define AP_MISSION_RELATIVE_MASK_USE_ALT_OFFSET      (1<<1)  // use altitude offset at first Waypoint for all Waypoints
+#define AP_MISSION_RELATIVE_MASK_POSITIVE_ALT_OFFSET (1<<2)  // use only positive altitude offsets
 
     class AP_Mission;
 
@@ -56,11 +57,17 @@ private:
     AP_Int8     _kind_of_move;          // defines the kind of move (translation/rotation) of the mission when entering Auto mode
     AP_Int8     _rel_options;           // bitmask options for special behaviour at translation
     AP_Float    _no_translation_radius; // distance in [m] from HomeLocation wherein a translation of a Relative Mission will be ignored
+    AP_Int8     _rotate_ch;             // channel to rotate by rc-channel-input
+
+    AP_Int8     _rel_options_fixed;     // bitmask options for special behaviour at translation - fixed at Mission-Start
 
     enum class Restart_Behaviour {
         RESTART_NOT_TRANSLATED,
         RESTART_PARALLEL_TRANSLATED,
-        RESTART_ROTATED_TRANSLATED
+        RESTART_ROTATED_NORTH,
+        RESTART_ROTATED_FIRST_WP,
+        RESTART_ROTATED_HEADING,
+        RESTART_ROTATED_CHANNEL
     };
 
     // for lat/lng translation of a Relative Mission

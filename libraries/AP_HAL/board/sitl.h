@@ -1,13 +1,13 @@
 #pragma once
 
 
-// ################################## just for testing
+ //################################## just for testing
 #ifndef ENABLED
     #define ENABLED 1
 #endif
 #define MISSION_RELATIVE ENABLED
 //#define MISSION_RELATIVE 0
-// ##################################
+// ################################## */
 
 #define HAL_BOARD_NAME "SITL"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_1000

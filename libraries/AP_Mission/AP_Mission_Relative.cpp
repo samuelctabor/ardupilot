@@ -32,7 +32,6 @@
 #include <AP_Common/Location.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <GCS_MAVLink/GCS.h>
-
 #include "AP_Mission_Relative.h"
 
 AP_Mission_Relative *AP_Mission_Relative::_singleton;
@@ -42,10 +41,10 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
     // @Param: MOVE
     // @DisplayName: kind of moving the mission
     // @Description: Defines how the mission will be translated/rotated
-    // @Range: 0 2
-    // @Values: 0:No move, 1:PARALLEL translation, 2:additional ROTATION
+    // @Range: 0 5
+    // @Values: 0:No move, 1:PARALLEL translation, 2:+ROTATION(1stWP-related) 3:+ROTATION(North-related) 4:+ROTATION(by Heading) 5:+ROTATION(by RC-channel)
     // @User: Advanced
-    AP_GROUPINFO_FLAGS("MOVE",  1, AP_Mission_Relative, _kind_of_move, AP_MISSION_RELATIVE_KIND_OF_MOVE_DEFAULT, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("_MOVE",  1, AP_Mission_Relative, _kind_of_move, AP_MISSION_RELATIVE_KIND_OF_MOVE_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
         // @Param: RADIUS
     // @DisplayName: radius to ignore translation
@@ -60,6 +59,13 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
     // @Bitmask: 0: At restart skip altitude at first Waypoint, 1: At restart use altitude offset (Basepoint to first Waypoint) for all Waypoints
 // @User: Advanced
     AP_GROUPINFO("OPTIONS",  3, AP_Mission_Relative, _rel_options, AP_MISSION_RELATIVE_OPTIONS_DEFAULT),
+
+    // @Param: CHANNEL
+    // @DisplayName: rc-input-channel for rotation
+    // @Description: rc-input-channel to control amount of rotation 1000mys=-180deg 1500mys=0deg 2000mys=+180deg
+    // @User: Advanced
+    // @Values: <1:No rotation >0:selected rc-input-channel
+    AP_GROUPINFO("CHANNEL",  4, AP_Mission_Relative, _rotate_ch, 0),
 
     AP_GROUPEND
 };
@@ -76,11 +82,6 @@ AP_Mission_Relative::AP_Mission_Relative(void)
 
 void AP_Mission_Relative::memorize()
 {
-    gcs().send_text(MAV_SEVERITY_DEBUG, "AP_Mission_relative::memorize");
-
-    gcs().send_text(MAV_SEVERITY_DEBUG, "_no_translation_radius : %f", (float)_no_translation_radius);
-    gcs().send_text(MAV_SEVERITY_DEBUG, "_kind_of_move : %i", (int)_kind_of_move);
-    gcs().send_text(MAV_SEVERITY_DEBUG, "_rel_options : %i", (int)_rel_options);
 
     switch (_kind_of_move) { // fix the behaviour at restart of the Mission
     case 0:
@@ -88,9 +89,23 @@ void AP_Mission_Relative::memorize()
         break;
     case 1:
         restart_behaviour = Restart_Behaviour::RESTART_PARALLEL_TRANSLATED;
+        gcs().send_text(MAV_SEVERITY_INFO, "Restart Parallel Translated");
         break;
     case 2:
-        restart_behaviour = Restart_Behaviour::RESTART_ROTATED_TRANSLATED;
+        restart_behaviour = Restart_Behaviour::RESTART_ROTATED_FIRST_WP;
+        gcs().send_text(MAV_SEVERITY_INFO, "Restart Rotated related 1st WP");
+        break;
+    case 3:
+        restart_behaviour = Restart_Behaviour::RESTART_ROTATED_NORTH;
+        gcs().send_text(MAV_SEVERITY_INFO, "Restart Rotated related North");
+        break;
+    case 4:
+        restart_behaviour = Restart_Behaviour::RESTART_ROTATED_HEADING;
+        gcs().send_text(MAV_SEVERITY_INFO, "Restart Rotated by Heading");
+        break;
+    case 5:
+        restart_behaviour = Restart_Behaviour::RESTART_ROTATED_CHANNEL;
+        gcs().send_text(MAV_SEVERITY_INFO, "Restart Rotated by RC-Channel");
         break;
     default:
         gcs().send_text(MAV_SEVERITY_NOTICE, "MIS__REL_MOVE out of range: %i", (int)_kind_of_move);
@@ -98,32 +113,24 @@ void AP_Mission_Relative::memorize()
     }
 
     if (restart_behaviour == Restart_Behaviour::RESTART_NOT_TRANSLATED) {
+        _translation.do_translation = false;
         return;
     }
     else
-    { // memorize the Basepoint (location of switching to AUTO)
+    {
+        _rel_options_fixed = _rel_options;
         _translation.calculated = false;
+        _translation.do_translation = true;
 
-        // determine the distance in [m] between Homepoint and Basepoint, to decide if a translation will happen
+        // memorize the Basepoint (location of switching to AUTO)
         AP::ahrs().get_position(_basepoint_loc); // _basepoint_loc.alt is absolute in [cm] in every case
-        AP_Mission::Mission_Command tmp;
-        tmp.content.location = AP::ahrs().get_home();
-        float tmp_distance = tmp.content.location.get_distance(_basepoint_loc); // in [m]
-        gcs().send_text(MAV_SEVERITY_DEBUG, "Mission_Relative: tmp_distance: %f", tmp_distance);
 
-        if (tmp_distance < _no_translation_radius) { // no translation if the distance to Homepoint is too small
-            _translation.do_translation = false;
-            return;
-        }
-        else {
-            _translation.do_translation = true;
-        }
-        _translation.alt = tmp.content.location.alt; // altitude of Homepoint, necessary for calculation of altitude-adaption at Restart
+        AP_Mission::Mission_Command tmp;
 
         // check if one of the Waypoints has (terrain_alt == 1) -> no translation allowed
         uint16_t i=0;
         while (AP::mission()->get_next_nav_cmd(i, tmp) && (_translation.do_translation) && (tmp.id != MAV_CMD_DO_LAND_START)) { // advance to the next command
-            // check if Waypoint
+            // check if Waypoint with Location
             if (!(tmp.content.location.lat == 0 && tmp.content.location.lng == 0)) {
                 switch (tmp.id) { // no translation for TAKEOFF or LAND commands
                     case MAV_CMD_NAV_TAKEOFF:
@@ -134,12 +141,57 @@ void AP_Mission_Relative::memorize()
                     default:
                         if (tmp.content.location.terrain_alt == 1) {
                             _translation.do_translation = false;
-                            gcs().send_text(MAV_SEVERITY_NOTICE, "Mission_Relative: terrain_alt -> No move possible");
+                            gcs().send_text(MAV_SEVERITY_NOTICE, "Mission_Relative: terrain_alt -> NO MOVE POSSIBLE");
+                            return;
                         }
                 }
             }
             i++;// move on to next command
         }
+
+
+        // no translation if the distance to Homepoint is too small
+        tmp.content.location = AP::ahrs().get_home();
+        float tmp_distance = tmp.content.location.get_distance(_basepoint_loc); // in [m]
+        if (tmp_distance < _no_translation_radius) {
+             gcs().send_text(MAV_SEVERITY_NOTICE, "distance to Home: %fm -> NO translation", tmp_distance);
+            _translation.do_translation = false;
+            return;
+        }
+
+        // calculate amount of rotation
+        switch (restart_behaviour) {
+            case Restart_Behaviour::RESTART_ROTATED_NORTH:
+            case Restart_Behaviour::RESTART_ROTATED_FIRST_WP:
+                tmp.content.location = AP::ahrs().get_home();
+                // get direction from Homepoint to Basepoint (North-related)
+                _translation.direction = tmp.content.location.get_bearing_to(_basepoint_loc);   // in centidegrees from 0 36000
+                break;
+            case Restart_Behaviour::RESTART_ROTATED_HEADING:
+                // rotation via heading at Basepoint
+                _translation.direction = AP::ahrs().yaw_sensor;
+                break;
+            case Restart_Behaviour::RESTART_ROTATED_CHANNEL:
+                // rotation via RC-channel: 1000mys<->-180deg 1500mys<->0deg 2000mys<->+180deg
+                uint16_t radio_in;
+                if (_rotate_ch > 0) {
+                    radio_in = RC_Channels::get_radio_in(_rotate_ch-1);
+                    radio_in = (radio_in > 2000 ? 2000 : radio_in);
+                    radio_in = (radio_in < 1000 ? 1000 : radio_in);
+                    _translation.direction = 36 * (radio_in-1000) - 18000;
+                }
+                else {
+                    _translation.direction = 0;
+                }
+                break;
+            case Restart_Behaviour::RESTART_NOT_TRANSLATED:
+            case Restart_Behaviour::RESTART_PARALLEL_TRANSLATED:
+            default:
+                _translation.direction = 0;
+        }
+
+        // altitude of Homepoint, necessary for calculation of altitude-adaption
+        _translation.alt = tmp.content.location.alt;
     }
 }
 
@@ -150,7 +202,6 @@ void AP_Mission_Relative::set_no_translation()
 
 void AP_Mission_Relative::moveloc(Location& loc, uint16_t id)
 {
-    gcs().send_text(MAV_SEVERITY_DEBUG, "moveloc id:%i lat:%i lng:%i", id, loc.lat, loc.lng);
 
     //  calculate and do translation/rotation
     if (_translation.do_translation) { // no translation if generally off by parameter or if we are behind DO_LAND_START
@@ -161,14 +212,24 @@ void AP_Mission_Relative::moveloc(Location& loc, uint16_t id)
             case MAV_CMD_NAV_VTOL_LAND:
                 break;
             default:
-                Location tmp;
-                // calculate parallel translation from first Waypoint to Basepoint
+
+                // check, if WP with terrain_alt == 1 has been loaded on the fly
+                if (loc.terrain_alt == 1) {
+                    AP::ahrs().get_position(loc); // skip Waypoint
+                    gcs().send_text(MAV_SEVERITY_NOTICE, "Mission_Relative: terrain_alt -> WP skipped");
+                    return;
+                }
+                // calculate parallel translation and corresponding values just once at first Waypoint
                 if ((!_translation.calculated)&&(restart_behaviour >= Restart_Behaviour::RESTART_PARALLEL_TRANSLATED)) {
-                    if (AP_MISSION_RELATIVE_MASK_SKIP_FIRST_WP & _rel_options) {
-                        loc.alt = _translation.alt;
-                    }
+
                     _translation.calculated = true;
-                    _first_wp_loc = loc; // memorize position of very first WayPoint
+
+                    _first_wp_loc = loc; // memorize not translated position of very first WayPoint
+
+                    if (restart_behaviour == Restart_Behaviour::RESTART_ROTATED_FIRST_WP) {
+                        // direction from Homepoint to untranslated 1st-Waypoint (1st-WP-related)
+                        _translation.direction -= AP::ahrs().get_home().get_bearing_to(_first_wp_loc);
+                    }
 
                     // calculate altitude-translation
                     if (loc.relative_alt == 1) {
@@ -177,34 +238,23 @@ void AP_Mission_Relative::moveloc(Location& loc, uint16_t id)
                         _translation.alt = _basepoint_loc.alt - loc.alt;
                     }
 
-                    // get direction from Homepoint to Basepoint
-                    tmp = AP::ahrs().get_home();
-                    _translation.direction = tmp.get_bearing_to(_basepoint_loc);   // in centidegrees from 0 36000
-
-                    // direction from Homepoint to Basepoint / amount of rotation (center is the Basepoint)
-                    _translation.direction -= tmp.get_bearing_to(loc);
-                    if (_translation.direction < 0) {
-                        _translation.direction += 36000;
+                    // allow just positive offsets for altitude
+                    if ((AP_MISSION_RELATIVE_MASK_POSITIVE_ALT_OFFSET & _rel_options_fixed) && (_translation.alt < 0)) {
+                        _translation.alt = 0;
                     }
 
-                    loc = _basepoint_loc;
-                    switch (restart_behaviour) {
-                    case Restart_Behaviour::RESTART_PARALLEL_TRANSLATED:
-                        gcs().send_text(MAV_SEVERITY_INFO, "Restart Parallel Translated");
-                        break;
-                    case Restart_Behaviour::RESTART_ROTATED_TRANSLATED:
-                        gcs().send_text(MAV_SEVERITY_INFO, "Restart Rotated");
-                        break;
-                    default:
-                        break;
+                    loc.lat = _basepoint_loc.lat; // put 1st-Waypoint to Basepoint as basically defined
+                    loc.lng = _basepoint_loc.lng;
+
+                    // skip first Waypoint by setting nominal location to actual (esp. altitude)
+                    if ((AP_MISSION_RELATIVE_MASK_SKIP_FIRST_WP & _rel_options_fixed) || (AP_MISSION_RELATIVE_MASK_USE_ALT_OFFSET & _rel_options_fixed)){
+                        AP::ahrs().get_position(loc); // skip Waypoint
                     }
-                    gcs().send_text(MAV_SEVERITY_INFO, "Restart alt-transmission %.2fm",  static_cast<float>(_translation.alt)/100.0);
-                }
-                else {
+                } else {
                     if (restart_behaviour >= Restart_Behaviour::RESTART_PARALLEL_TRANSLATED){ // do at least parallel translation
                         AP_Mission_Relative::translate(loc);
                     }
-                    if (restart_behaviour >= Restart_Behaviour::RESTART_ROTATED_TRANSLATED){ // do additional rotation
+                    if (restart_behaviour > Restart_Behaviour::RESTART_PARALLEL_TRANSLATED){ // do additional rotation
                         AP_Mission_Relative::rotate(loc);
                     }
                 }
@@ -214,30 +264,29 @@ void AP_Mission_Relative::moveloc(Location& loc, uint16_t id)
 
 void AP_Mission_Relative::translate(Location& loc)
 {
-    gcs().send_text(MAV_SEVERITY_DEBUG, "AP_Mission_relative::translate");
     Location tmp;
     tmp = loc; // before translation
     loc.lat = _basepoint_loc.lat + (loc.lat - _first_wp_loc.lat);
     // correction of lng, based on lat-translation
     loc.lng = _basepoint_loc.lng + (loc.lng - _first_wp_loc.lng) / tmp.longitude_scale() * loc.longitude_scale();
 
-    if (AP_MISSION_RELATIVE_MASK_USE_ALT_OFFSET & _rel_options) { // do altitude translation
+    if (AP_MISSION_RELATIVE_MASK_USE_ALT_OFFSET & _rel_options_fixed) { // do altitude translation
         loc.alt += _translation.alt;
     }
 }
 
 void AP_Mission_Relative::rotate(Location& loc)
 {
-    gcs().send_text(MAV_SEVERITY_DEBUG, "AP_Mission_relative::rotate");
+    float rel_lat, rel_lng; // position of currently parallel translated WayPoint relative to Basepoint
+    float rel_distance;     // imaginary distance lat/lng from Basepoint to current WP in [10^7 Degrees]
+    rel_lat =  loc.lat - _basepoint_loc.lat;
+    rel_lng = (loc.lng - _basepoint_loc.lng)*loc.longitude_scale();
+
     Rotation tmprot;
-    float rel_lat, rel_lng; // position of currently parallel translated WayPoint relative to Start-Waypoint
-    float rel_distance;     // imaginary distance lat/lng from Start-Waypoint to current WP in [10^7 Degrees]
-    rel_lat = loc.lat - _basepoint_loc.lat;
-    rel_lng = (loc.lng - _basepoint_loc.lng)*loc.longitude_scale();;
-    tmprot.direction = _basepoint_loc.get_bearing_to(loc);   // direction from Start_waypoint to current WP in centidegrees
+    tmprot.direction = _basepoint_loc.get_bearing_to(loc);   // direction from Basepoint to current WP in centidegrees (not rotated)
     tmprot.direction = _translation.direction + tmprot.direction; // total rotation direction in centidegrees
     if (tmprot.direction < 0) {
-        tmprot.direction =+ 36000;
+        tmprot.direction += 36000;
     }
     rel_distance = sqrtf((rel_lat*rel_lat)+(rel_lng*rel_lng));
     tmprot.lat = (int32_t)(cosf((float)tmprot.direction/100.0*DEG_TO_RAD)*rel_distance);
