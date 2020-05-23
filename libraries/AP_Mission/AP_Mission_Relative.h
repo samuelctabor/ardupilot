@@ -14,7 +14,13 @@
  */
 #pragma once
 
+#ifndef ENABLED
+    #define ENABLED 1
+#endif
+
 #include <AP_Param/AP_Param.h>
+//#include <AP_Soaring/AP_Soaring.h> //##########
+//#include <AP_Vehicle/AP_Vehicle.h> //##########
 
 // definitions
 #ifndef AP_MISSION_RELATIVE_NO_TRANSLATION_RADIUS_DEFAULT
@@ -37,8 +43,12 @@ class AP_Mission_Relative
     friend class AP_Mission;
 
 public:
-    AP_Mission_Relative(void);
 
+    AP_Mission_Relative(void);
+/*
+    AP_Mission_Relative(const SoaringController &parms);
+    const SoaringController &soarparm;
+*/
     /* Do not allow copies */
     AP_Mission_Relative(const AP_Mission_Relative &other) = delete;
     AP_Mission_Relative &operator=(const AP_Mission_Relative&) = delete;

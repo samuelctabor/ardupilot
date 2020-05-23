@@ -56,7 +56,7 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
     // @Param: OPTIONS
     // @DisplayName: selectable options for translation
     // @Description: Bitmask of what options to use in missions.
-    // @Bitmask: 0: At restart skip altitude at first Waypoint, 1: At restart use altitude offset (Basepoint to first Waypoint) for all Waypoints
+    // @Bitmask: 0: skip altitude at first Waypoint, 1: use altitude-offset (Basepoint to first Waypoint) for all Waypoints, 2: just positive altitude-offsets allowed
 // @User: Advanced
     AP_GROUPINFO("OPTIONS",  3, AP_Mission_Relative, _rel_options, AP_MISSION_RELATIVE_OPTIONS_DEFAULT),
 
@@ -70,9 +70,19 @@ const AP_Param::GroupInfo AP_Mission_Relative::var_info[] = {
     AP_GROUPEND
 };
 
+
+
+
+
+
 // constructor
-AP_Mission_Relative::AP_Mission_Relative(void)
+
+/*AP_Mission_Relative::AP_Mission_Relative(const SoaringController &parms) :
+        soarparm(parms)
 {
+*/
+AP_Mission_Relative::AP_Mission_Relative(void) {
+
     AP_Param::setup_object_defaults(this, var_info); // load parameter defaults
 
     _singleton = this;
@@ -82,6 +92,12 @@ AP_Mission_Relative::AP_Mission_Relative(void)
 
 void AP_Mission_Relative::memorize()
 {
+//    gcs().send_text(MAV_SEVERITY_DEBUG, "soarparm.soar_active=%d", soarparm.soar_active);
+
+    if ((RC_Channels::get_radio_in(5-1) > 1700) && _translation.calculated) {
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Mission_Relative: Soaring -> NO displacement");
+        return;
+    }
 
     switch (_kind_of_move) { // fix the behaviour at restart of the Mission
     case 0:
