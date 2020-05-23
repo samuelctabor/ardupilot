@@ -6,6 +6,10 @@
     #define ENABLED 1
 #endif
 #define MISSION_RELATIVE ENABLED
+#ifndef SOARING_ENABLED
+    #define SOARING_ENABLED ENABLED
+#endif
+//#define SOARING_ENABLED 0
 //#define MISSION_RELATIVE 0
 // ################################## */
 
