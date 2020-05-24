@@ -23,6 +23,7 @@
 #include <AP_Common/Location.h>
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
+#include <AP_Vehicle/ModeReason.h>
 #if MISSION_RELATIVE == ENABLED
     #include <AP_Mission/AP_Mission_Relative.h>
 #endif
@@ -292,14 +293,15 @@ public:
     FUNCTOR_TYPEDEF(mission_complete_fn_t, void);
 
     // constructor
-    AP_Mission(mission_cmd_fn_t cmd_start_fn, mission_cmd_fn_t cmd_verify_fn, mission_complete_fn_t mission_complete_fn) :
+    AP_Mission(mission_cmd_fn_t cmd_start_fn, mission_cmd_fn_t cmd_verify_fn, mission_complete_fn_t mission_complete_fn, ModeReason& mode_reason) :
         _cmd_start_fn(cmd_start_fn),
         _cmd_verify_fn(cmd_verify_fn),
         _mission_complete_fn(mission_complete_fn),
         _prev_nav_cmd_id(AP_MISSION_CMD_ID_NONE),
         _prev_nav_cmd_index(AP_MISSION_CMD_INDEX_NONE),
         _prev_nav_cmd_wp_index(AP_MISSION_CMD_INDEX_NONE),
-        _last_change_time_ms(0)
+        _last_change_time_ms(0),
+        _mode_reason(mode_reason)
     {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         if (_singleton != nullptr) {
@@ -640,6 +642,9 @@ private:
     // multi-thread support. This is static so it can be used from
     // const functions
     static HAL_Semaphore _rsem;
+
+    // reference to reason for mode change.
+    ModeReason& _mode_reason;
 
     // mission items common to all vehicles:
     bool start_command_do_gripper(const AP_Mission::Mission_Command& cmd);

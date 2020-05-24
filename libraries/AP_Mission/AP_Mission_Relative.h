@@ -19,6 +19,7 @@
 #endif
 
 #include <AP_Param/AP_Param.h>
+#include <AP_Vehicle/ModeReason.h>
 //#include <AP_Soaring/AP_Soaring.h> //##########
 //#include <AP_Vehicle/AP_Vehicle.h> //##########
 
@@ -117,6 +118,9 @@ private:
 
     /// rotate - if the Command is a Waypoint the Location will be rotated according to Parameters
     void rotate(Location& loc);
+
+    /// Check reason for mode change for whether mission should be made relative
+    bool check_reason_valid(ModeReason reason);
 
 };
 

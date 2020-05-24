@@ -312,6 +312,11 @@ void AP_Mission_Relative::rotate(Location& loc)
 
 }
 
+bool AP_Mission_Relative::check_reason_valid(ModeReason reason)
+{
+    return true;
+}
+
 namespace AP {
     AP_Mission_Relative &mission_relative() {
         return *AP_Mission_Relative::get_singleton();

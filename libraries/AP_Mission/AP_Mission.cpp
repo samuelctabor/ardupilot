@@ -1582,7 +1582,9 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
                 _prev_nav_cmd_wp_index = _nav_cmd.index;
 #if MISSION_RELATIVE == ENABLED
                 // move Waypoint-Location according to Basepoint and parameters
-                mission_relative.moveloc(cmd.content.location,cmd.id);
+                if (mission_relative.check_reason_valid(_mode_reason)) {
+                    mission_relative.moveloc(cmd.content.location,cmd.id);
+                }
 #endif
             }
             // set current navigation command and start it

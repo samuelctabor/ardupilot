@@ -599,7 +599,8 @@ private:
     AP_Mission mission{
             FUNCTOR_BIND_MEMBER(&Plane::start_command_callback, bool, const AP_Mission::Mission_Command &),
             FUNCTOR_BIND_MEMBER(&Plane::verify_command_callback, bool, const AP_Mission::Mission_Command &),
-            FUNCTOR_BIND_MEMBER(&Plane::exit_mission_callback, void)};
+            FUNCTOR_BIND_MEMBER(&Plane::exit_mission_callback, void),
+            control_mode_reason};
 
 #if MISSION_RELATIVE == ENABLED
     // Mission_Relative library
