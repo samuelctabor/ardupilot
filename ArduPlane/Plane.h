@@ -634,9 +634,7 @@ private:
     AP_Terrain terrain{mission};
 #endif
 
-    AP_Landing landing{mission,ahrs,SpdHgt_Controller,nav_controller,aparm,
-            FUNCTOR_BIND(&altitudePlanner, &AP_AltitudePlanner::set_target_altitude_proportion, void, const Location&, float, int32_t, bool),
-            FUNCTOR_BIND(&altitudePlanner, &AP_AltitudePlanner::constrain_target_altitude_location, void, const Location&, const Location&),
+    AP_Landing landing{mission,ahrs,SpdHgt_Controller,nav_controller,aparm,altitudePlanner,
             FUNCTOR_BIND_MEMBER(&Plane::adjusted_altitude_cm, int32_t),
             FUNCTOR_BIND_MEMBER(&Plane::adjusted_relative_altitude_cm, int32_t),
             FUNCTOR_BIND_MEMBER(&Plane::disarm_if_autoland_complete, void),
