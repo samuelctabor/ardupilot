@@ -254,7 +254,7 @@ private:
 #endif
 
     // Altitude management library
-    AP_AltitudePlanner altitudePlanner{ahrs, aparm};
+    AP_AltitudePlanner altitudePlanner{aparm};
     
     ModeCircle mode_circle;
     ModeStabilize mode_stabilize;
