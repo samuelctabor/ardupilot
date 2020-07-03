@@ -321,10 +321,10 @@ void AP_Landing::type_slope_setup_landing_glide_slope(const Location &prev_WP_lo
     float land_proportion = current_loc.line_path_proportion(prev_WP_loc, loc);
 
     // now setup the glide slope for landing
-    set_target_altitude_proportion_fn(loc, 1.0f - land_proportion, 0, true);
+    altitudePlanner.set_target_altitude_proportion(loc, 1.0f - land_proportion, 0, true);
 
     // stay within the range of the start and end locations in altitude
-    constrain_target_altitude_location_fn(loc, prev_WP_loc);
+    altitudePlanner.constrain_target_altitude_location(loc, prev_WP_loc);
 }
 
 int32_t AP_Landing::type_slope_get_target_airspeed_cm(void)

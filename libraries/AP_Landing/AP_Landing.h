@@ -22,6 +22,8 @@
 #include <AP_Navigation/AP_Navigation.h>
 #include "AP_Landing_Deepstall.h"
 #include <AP_Common/Location.h>
+#include <AP_AltitudePlanner/AP_AltitudePlanner.h>
+
 
 /// @class  AP_Landing
 /// @brief  Class managing ArduPlane landing methods
@@ -29,16 +31,13 @@ class AP_Landing {
     friend class AP_Landing_Deepstall;
 
 public:
-    FUNCTOR_TYPEDEF(set_target_altitude_proportion_fn_t, void, const Location&, float, int32_t, bool);
-    FUNCTOR_TYPEDEF(constrain_target_altitude_location_fn_t, void, const Location&, const Location&);
     FUNCTOR_TYPEDEF(adjusted_altitude_cm_fn_t, int32_t);
     FUNCTOR_TYPEDEF(adjusted_relative_altitude_cm_fn_t, int32_t);
     FUNCTOR_TYPEDEF(disarm_if_autoland_complete_fn_t, void);
     FUNCTOR_TYPEDEF(update_flight_stage_fn_t, void);
 
     AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_SpdHgt_Controller, AP_Navigation *_nav_controller, AP_Vehicle::FixedWing &_aparm,
-               set_target_altitude_proportion_fn_t _set_target_altitude_proportion_fn,
-               constrain_target_altitude_location_fn_t _constrain_target_altitude_location_fn,
+               AP_AltitudePlanner &_altitudePlanner,
                adjusted_altitude_cm_fn_t _adjusted_altitude_cm_fn,
                adjusted_relative_altitude_cm_fn_t _adjusted_relative_altitude_cm_fn,
                disarm_if_autoland_complete_fn_t _disarm_if_autoland_complete_fn,
@@ -136,10 +135,11 @@ private:
     
     AP_Vehicle::FixedWing &aparm;
 
-    set_target_altitude_proportion_fn_t set_target_altitude_proportion_fn;
-    constrain_target_altitude_location_fn_t constrain_target_altitude_location_fn;
     adjusted_altitude_cm_fn_t adjusted_altitude_cm_fn;
     adjusted_relative_altitude_cm_fn_t adjusted_relative_altitude_cm_fn;
+
+    AP_AltitudePlanner &altitudePlanner;
+
     disarm_if_autoland_complete_fn_t disarm_if_autoland_complete_fn;
     update_flight_stage_fn_t update_flight_stage_fn;
 

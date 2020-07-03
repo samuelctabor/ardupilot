@@ -155,8 +155,7 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
 
     // constructor
 AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_SpdHgt_Controller, AP_Navigation *_nav_controller, AP_Vehicle::FixedWing &_aparm,
-                       set_target_altitude_proportion_fn_t _set_target_altitude_proportion_fn,
-                       constrain_target_altitude_location_fn_t _constrain_target_altitude_location_fn,
+                       AP_AltitudePlanner &_altitudePlanner,
                        adjusted_altitude_cm_fn_t _adjusted_altitude_cm_fn,
                        adjusted_relative_altitude_cm_fn_t _adjusted_relative_altitude_cm_fn,
                        disarm_if_autoland_complete_fn_t _disarm_if_autoland_complete_fn,
@@ -166,8 +165,7 @@ AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_
     ,SpdHgt_Controller(_SpdHgt_Controller)
     ,nav_controller(_nav_controller)
     ,aparm(_aparm)
-    ,set_target_altitude_proportion_fn(_set_target_altitude_proportion_fn)
-    ,constrain_target_altitude_location_fn(_constrain_target_altitude_location_fn)
+    ,altitudePlanner(_altitudePlanner)
     ,adjusted_altitude_cm_fn(_adjusted_altitude_cm_fn)
     ,adjusted_relative_altitude_cm_fn(_adjusted_relative_altitude_cm_fn)
     ,disarm_if_autoland_complete_fn(_disarm_if_autoland_complete_fn)
