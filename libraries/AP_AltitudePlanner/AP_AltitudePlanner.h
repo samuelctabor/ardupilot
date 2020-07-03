@@ -7,9 +7,8 @@
 
 class AP_AltitudePlanner {
 public:
-    AP_AltitudePlanner(AP_AHRS &ahrs, const AP_Vehicle::FixedWing &parms)
-        : _ahrs(ahrs)
-        , _aparm(parms)
+    AP_AltitudePlanner(const AP_Vehicle::FixedWing &parms)
+        : _aparm(parms)
     {
     }
 
@@ -151,7 +150,6 @@ private:
     float _additional_alt_offset;
 
     AP_Terrain              *_terrain; // pointer to terrain source
-    AP_AHRS                 &_ahrs;
     const AP_Vehicle::FixedWing &_aparm;
 
 

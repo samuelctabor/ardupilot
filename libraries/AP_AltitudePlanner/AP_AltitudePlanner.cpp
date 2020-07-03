@@ -55,8 +55,9 @@ void AP_AltitudePlanner::set_target_altitude_current_adjusted(const Location &lo
 void AP_AltitudePlanner::set_target_altitude_location(const Location &loc)
 {
     _target_amsl_cm = loc.alt;
+
     if (loc.relative_alt) {
-        _target_amsl_cm += _ahrs.get_home().alt;
+        _target_amsl_cm += AP::ahrs().get_home().alt;
     }
 #if AP_TERRAIN_AVAILABLE
     /*
@@ -70,7 +71,7 @@ void AP_AltitudePlanner::set_target_altitude_location(const Location &loc)
         _target_terrain_alt_cm = loc.alt;
         if (!loc.relative_alt) {
             // it has home added, remove it
-            _target_terrain_alt_cm -= _ahrs.get_home().alt;
+            _target_terrain_alt_cm -= AP::ahrs().get_home().alt;
         }
     } else {
         _target_terrain_following = false;
@@ -97,7 +98,7 @@ int32_t AP_AltitudePlanner::relative_target_altitude_cm(float lookahead_adjustme
         return relative_home_height*100;
     }
 #endif
-    int32_t relative_alt = _target_amsl_cm - _ahrs.get_home().alt;
+    int32_t relative_alt = _target_amsl_cm - AP::ahrs().get_home().alt;
     relative_alt += mission_alt_offset()*100;
     relative_alt += rangefinder_correction * 100;
     return relative_alt;
@@ -170,8 +171,8 @@ void AP_AltitudePlanner::check_fbwb_minimum_altitude(int32_t min_alt_cm)
     }
 #endif
 
-    if (_target_amsl_cm < _ahrs.get_home().alt + min_alt_cm) {
-        _target_amsl_cm = _ahrs.get_home().alt + min_alt_cm;
+    if (_target_amsl_cm < AP::ahrs().get_home().alt + min_alt_cm) {
+        _target_amsl_cm = AP::ahrs().get_home().alt + min_alt_cm;
     }
 }
 
@@ -184,7 +185,7 @@ void AP_AltitudePlanner::reset_offset_altitude(void)
 void AP_AltitudePlanner::set_offset_altitude_location(const Location &loc, bool suppress_glideslope)
 {
     Location current_loc;
-    _ahrs.get_position(current_loc);
+    AP::ahrs().get_position(current_loc);
     _target_offset_cm = loc.alt - current_loc.alt;
 
 #if AP_TERRAIN_AVAILABLE
@@ -222,7 +223,7 @@ bool AP_AltitudePlanner::above_location(const Location &loc1, const Location &lo
         _terrain->height_above_terrain(terrain_alt, true)) {
         float loc2_alt = loc2.alt*0.01f;
         if (!loc2.relative_alt) {
-            loc2_alt -= _ahrs.get_home().alt*0.01f;
+            loc2_alt -= AP::ahrs().get_home().alt*0.01f;
         }
         return terrain_alt > loc2_alt;
     }
@@ -230,7 +231,7 @@ bool AP_AltitudePlanner::above_location(const Location &loc1, const Location &lo
 
     float loc2_alt_cm = loc2.alt;
     if (loc2.relative_alt) {
-        loc2_alt_cm += _ahrs.get_home().alt;
+        loc2_alt_cm += AP::ahrs().get_home().alt;
     }
     return loc1.alt > loc2_alt_cm;
 }
@@ -245,7 +246,7 @@ float AP_AltitudePlanner::height_above_target(const Location& loc, const Locatio
 {
     float target_alt = target_loc.alt*0.01;
     if (!target_loc.relative_alt) {
-        target_alt -= _ahrs.get_home().alt*0.01f;
+        target_alt -= AP::ahrs().get_home().alt*0.01f;
     }
 
 #if AP_TERRAIN_AVAILABLE
@@ -257,5 +258,5 @@ float AP_AltitudePlanner::height_above_target(const Location& loc, const Locatio
     }
 #endif
 
-    return (loc.alt*0.01f - mission_alt_offset() - _ahrs.get_home().alt*0.01f) - target_alt;
+    return (loc.alt*0.01f - mission_alt_offset() - AP::ahrs().get_home().alt*0.01f) - target_alt;
 }
