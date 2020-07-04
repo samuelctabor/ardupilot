@@ -53,7 +53,7 @@ void Plane::adjust_altitude_target()
             temp.alt = MAX(guided_state.target_alt, temp.alt);
         }
         guided_state.last_target_alt = temp.alt;
-        set_target_altitude_location(temp);
+        altitudePlanner.set_target_altitude_location(temp);
     } else 
 #endif // OFFBOARD_GUIDED == ENABLED
       if (landing.is_flaring()) {
