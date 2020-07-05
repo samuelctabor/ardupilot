@@ -29,8 +29,6 @@ void Plane::adjust_altitude_target()
 
     int32_t offset_cm = altitudePlanner.get_target_offset_cm(); // TEMP
 
-    int32_t target_altitude_temp;
-
     if (control_mode == &mode_fbwb ||
         control_mode == &mode_cruise) {
         return;
@@ -61,7 +59,7 @@ void Plane::adjust_altitude_target()
         // rate, and ignores the target altitude
         altitudePlanner.set_target_altitude_location(next_WP_loc);
     } else if (landing.is_on_approach()) {
-        landing.setup_landing_glide_slope(prev_WP_loc, next_WP_loc, current_loc, target_altitude_temp);
+        landing.setup_landing_glide_slope(prev_WP_loc, next_WP_loc, current_loc);
         landing.adjust_landing_slope_for_rangefinder_bump(rangefinder_state, prev_WP_loc, next_WP_loc, current_loc, auto_state.wp_distance, offset_cm);
     } else if (landing.get_target_altitude_location(target_location)) {
        altitudePlanner.set_target_altitude_location(target_location);

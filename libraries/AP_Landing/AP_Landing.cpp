@@ -389,11 +389,11 @@ const AP_Logger::PID_Info* AP_Landing::get_pid_info(void) const
   which can lead to erratic pitch control
  */
 
-void AP_Landing::setup_landing_glide_slope(const Location &prev_WP_loc, const Location &next_WP_loc, const Location &current_loc, int32_t &target_altitude_offset_cm)
+void AP_Landing::setup_landing_glide_slope(const Location &prev_WP_loc, const Location &next_WP_loc, const Location &current_loc)
 {
     switch (type) {
     case TYPE_STANDARD_GLIDE_SLOPE:
-        type_slope_setup_landing_glide_slope(prev_WP_loc, next_WP_loc, current_loc, target_altitude_offset_cm);
+        type_slope_setup_landing_glide_slope(prev_WP_loc, next_WP_loc, current_loc);
         break;
     case TYPE_DEEPSTALL:
     default:
