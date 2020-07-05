@@ -15,6 +15,7 @@
 
 #include "Plane.h"
 #include <AP_AltitudePlanner/AP_AltitudePlanner.h>
+
 /*
   altitude handling routines. These cope with both barometric control
   and terrain following control
@@ -30,8 +31,6 @@ void Plane::adjust_altitude_target()
     altitudePlanner.set_terrain_disabled(terrain_disabled());
     
     Location target_location;
-
-    int32_t offset_cm = altitudePlanner.get_target_offset_cm(); // TEMP
 
     if (control_mode == &mode_fbwb ||
         control_mode == &mode_cruise) {
@@ -64,7 +63,7 @@ void Plane::adjust_altitude_target()
         altitudePlanner.set_target_altitude_location(next_WP_loc);
     } else if (landing.is_on_approach()) {
         landing.setup_landing_glide_slope(prev_WP_loc, next_WP_loc, current_loc);
-        landing.adjust_landing_slope_for_rangefinder_bump(rangefinder_state, prev_WP_loc, next_WP_loc, current_loc, auto_state.wp_distance, offset_cm);
+        landing.adjust_landing_slope_for_rangefinder_bump(rangefinder_state, prev_WP_loc, next_WP_loc, current_loc, auto_state.wp_distance);
     } else if (landing.get_target_altitude_location(target_location)) {
        altitudePlanner.set_target_altitude_location(target_location);
 #if SOARING_ENABLED == ENABLED
