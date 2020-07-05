@@ -1,18 +1,18 @@
 #include "AP_AltitudePlanner.h"
 
-void AP_AltitudePlanner::setup_glide_slope(const Location &start_loc, const Location &target_loc, bool apply_gradual_climb, int32_t start_adj_rel_alt, bool suppress_glideslope)
+void AP_AltitudePlanner::setup_glide_slope(const Location &start_loc, const Location &target_loc, bool apply_gradual_climb, int32_t start_adj_rel_alt, bool force_glideslope)
 {
     if (apply_gradual_climb) {
         // RTL, AVOID_ADSB or GUIDED modes
         if (above_location(start_loc, target_loc)) {
-            set_offset_altitude_location(target_loc, suppress_glideslope);
+            set_offset_altitude_location(target_loc, force_glideslope);
         } else {
             reset_offset_altitude();
         }
     } else {
         // AUTO mode
         if (start_adj_rel_alt > 2000 || above_location(start_loc, target_loc)) {
-            set_offset_altitude_location(target_loc, suppress_glideslope);
+            set_offset_altitude_location(target_loc, force_glideslope);
         } else {
             reset_offset_altitude();
         }
@@ -182,7 +182,7 @@ void AP_AltitudePlanner::reset_offset_altitude(void)
     _target_offset_cm = 0;
 }
 
-void AP_AltitudePlanner::set_offset_altitude_location(const Location &loc, bool suppress_glideslope)
+void AP_AltitudePlanner::set_offset_altitude_location(const Location &loc, bool force_glideslope)
 {
     Location current_loc;
     AP::ahrs().get_position(current_loc);
@@ -202,7 +202,7 @@ void AP_AltitudePlanner::set_offset_altitude_location(const Location &loc, bool 
     }
 #endif
 
-    if (!suppress_glideslope) {
+    if (!force_glideslope) {
         // if we are within GLIDE_SLOPE_MIN meters of the target altitude
         // then reset the offset to not use a glide slope. This allows for
         // more accurate flight of missions where the aircraft may lose or
