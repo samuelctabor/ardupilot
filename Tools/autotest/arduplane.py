@@ -1745,9 +1745,10 @@ class AutoTestPlane(AutoTest):
 
         self.progress("Mission OK")
 
-    def fly_terrain_mission(self):
+        # To ensure state reset
+        self.customise_SITL_commandline([])
 
-        self.customise_SITL_commandline([], wipe=True)
+    def fly_terrain_mission(self):
 
         self.mavproxy.send("wp set 1\n")
         self.wait_ready_to_arm()
