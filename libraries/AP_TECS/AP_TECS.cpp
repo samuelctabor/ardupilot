@@ -1212,15 +1212,17 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
     // @Field: PErr: difference between estimated potential energy and desired potential energy
     // @Field: EDelta: current error in speed/balance weighting
     // @Field: LF: aerodynamic load factor
-    AP::logger().Write("TEC2", "TimeUS,pmax,pmin,KErr,PErr,EDelta,LF",
-                       "s------",
-                       "F------",
-                       "Qffffff",
+    AP::logger().Write("TEC2", "TimeUS,pmax,pmin,KErr,PErr,EDelta,LF,hdem2,hdem3",
+                       "s--------",
+                       "F--------",
+                       "Qffffffff",
                        now,
                        (double)degrees(_PITCHmaxf),
                        (double)degrees(_PITCHminf),
                        (double)logging.SKE_error,
                        (double)logging.SPE_error,
                        (double)logging.SEB_delta,
-                       (double)load_factor);
+                       (double)load_factor,
+                       (double)hgt_dem_cm*0.01f,
+                       (double)_hgt_dem);
 }
