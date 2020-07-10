@@ -75,6 +75,9 @@ protected:
     AP_Float alt_cutoff;
     AP_Float max_drift;
     AP_Float thermal_bank;
+    AP_Float soar_thermal_airspeed;
+    AP_Float soar_cruise_airspeed;
+    AP_Float soar_thermal_flap;
 
 public:
     SoaringController(AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms);
@@ -135,6 +138,15 @@ public:
     float get_circling_time() const {return _vario.tau;}
 
     float get_thermalling_radius() const;
+
+    float get_thermalling_target_airspeed();
+
+    float get_cruising_target_airspeed();
+
+    float get_thermalling_flap() const
+    {
+        return soar_thermal_flap;
+    }
 
 private:
 
