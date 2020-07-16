@@ -1755,6 +1755,16 @@ class AutoTestPlane(AutoTest):
 
         self.fly_mission("ap-terrain.txt", mission_timeout=600)
 
+    def fly_circuit_mission(self):
+
+        self.customise_SITL_commandline([], wipe=True)
+
+        self.mavproxy.send("wp set 1\n")
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+
+        self.fly_mission("ap-circuit.txt", mission_timeout=600)
+
     def tests(self):
         '''return list of all tests'''
         ret = super(AutoTestPlane, self).tests()
@@ -1867,6 +1877,10 @@ class AutoTestPlane(AutoTest):
             ("Terrain",
              "Test terrain following in mission",
              self.fly_terrain_mission),
+
+            ("Circuit",
+             "Test simple circuit",
+             self.fly_circuit_mission),
 
             ("LogUpload",
              "Log upload",
