@@ -315,7 +315,7 @@ void AP_Landing::type_slope_setup_landing_glide_slope(const Location &prev_WP_lo
     loc.alt -= slope * land_projection * 100;
 
     // setup the offset_cm for set_target_altitude_proportion()
-    altitudePlanner.set_offset_altitude_location(loc, true);
+    altitudePlanner.set_target_offset(loc.alt - prev_WP_loc.alt);
 
     // calculate the proportion we are to the target
     float land_proportion = current_loc.line_path_proportion(prev_WP_loc, loc);
