@@ -83,6 +83,14 @@ void Plane::adjust_altitude_target()
     }
 
     altitude_error_cm = calc_altitude_error_cm();
+
+
+    AP::logger().Write("TALT", "TimeUS,err,talt,relt,offs", "Qffff",
+                         AP_HAL::micros64(),
+                         (double)altitude_error_cm*0.01f,
+                         (double)target_altitude.amsl_cm*0.01f,
+                         (double)relative_target_altitude_cm()*0.01f,
+                         (double)target_altitude.offset_cm*0.01f);
 }
 
 /*
