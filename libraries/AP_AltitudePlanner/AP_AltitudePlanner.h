@@ -140,6 +140,9 @@ public:
     int32_t get_target_altitude_offset_cm(void) {return _target_offset_cm;};
 
     int32_t get_target_amsl_cm(void) {return _target_amsl_cm;};
+
+    void set_target_offset(int32_t target_offset_cm) {_target_offset_cm = target_offset_cm;};
+
 private:
 
     float _additional_alt_offset;
