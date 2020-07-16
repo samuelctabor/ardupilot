@@ -2856,6 +2856,15 @@ class AutoTestPlane(AutoTest):
             want_result=mavutil.mavlink.MAV_RESULT_DENIED
         )
 
+    def fly_circuit_mission(self):
+
+        self.customise_SITL_commandline([], wipe=True)
+
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+
+        self.fly_mission("ap-circuit.txt", mission_timeout=600)
+
     def tests(self):
         '''return list of all tests'''
         ret = super(AutoTestPlane, self).tests()
@@ -3040,6 +3049,10 @@ class AutoTestPlane(AutoTest):
             ("MAV_DO_AUX_FUNCTION",
              "Test triggering Auxillary Functions via mavlink",
              self.fly_aux_function),
+
+            ("Circuit",
+             "Test simple circuit",
+             self.fly_circuit_mission),
 
             ("LogUpload",
              "Log upload",
