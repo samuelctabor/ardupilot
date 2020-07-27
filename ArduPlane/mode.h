@@ -4,6 +4,7 @@
 #include <AP_Common/Location.h>
 #include <stdint.h>
 #include <AP_Common/Location.h>
+#include <AP_Vehicle/ModeReason.h>
 
 class Mode
 {
@@ -39,6 +40,7 @@ public:
         QRTL          = 21,
         QAUTOTUNE     = 22,
         QACRO         = 23,
+        THERMAL       = 24,
     };
 
     // Constructor
@@ -512,6 +514,27 @@ protected:
 
     bool takeoff_started;
     Location start_loc;
+
+    bool _enter() override;
+};
+
+class ModeThermal: public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::THERMAL; }
+    const char *name() const override { return "THERMAL"; }
+    const char *name4() const override { return "THML"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+protected:
+
+    bool exit_heading_aligned() const;
+    void restore_mode(const char *reason, ModeReason modereason, Mode &exit_mode);
 
     bool _enter() override;
 };

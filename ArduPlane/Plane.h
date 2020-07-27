@@ -157,6 +157,7 @@ public:
     friend class ModeQAcro;
     friend class ModeQAutotune;
     friend class ModeTakeoff;
+    friend class ModeThermal;
 
     Plane(void);
 
@@ -275,6 +276,7 @@ private:
     ModeQAcro mode_qacro;
     ModeQAutotune mode_qautotune;
     ModeTakeoff mode_takeoff;
+    ModeThermal mode_thermal;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1071,8 +1073,6 @@ private:
     // soaring.cpp
 #if SOARING_ENABLED == ENABLED
     void update_soaring();
-    bool soaring_exit_heading_aligned() const;
-    void soaring_restore_mode(const char *reason, ModeReason modereason, Mode &exit_mode);
 #endif
 
     // reverse_thrust.cpp
