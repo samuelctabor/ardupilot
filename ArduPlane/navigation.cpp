@@ -339,13 +339,13 @@ void Plane::update_fbwb_speed_height(void)
         if (is_zero(elevator_input) && !is_zero(fbwb_altitude.last_elevator_input)) {
             // the user has just released the elevator, lock in
             // the current altitude
-            altitudePlanner.set_target_altitude_current(current_loc);
+            altitudePlanner.set_target_altitude_current();
         }
 
 #if SOARING_ENABLED == ENABLED
         if (g2.soaring_controller.is_active() && g2.soaring_controller.get_throttle_suppressed()) {
             // we're in soaring mode with throttle suppressed
-            altitudePlanner.set_target_altitude_current(current_loc);;
+            altitudePlanner.set_target_altitude_current();;
         }
 #endif
         

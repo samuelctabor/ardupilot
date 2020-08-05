@@ -69,8 +69,7 @@ void Plane::adjust_altitude_target()
 #if SOARING_ENABLED == ENABLED
     } else if (g2.soaring_controller.is_active() && g2.soaring_controller.get_throttle_suppressed()) {
        // Reset target alt to current alt, to prevent large altitude errors when gliding.
-       altitudePlanner.set_target_altitude_location(current_loc);
-       altitudePlanner.reset_offset_altitude();
+       altitudePlanner.set_target_altitude_current();
 #endif
     } else if (reached_loiter_target()) {
         // once we reach a loiter target then lock to the final
@@ -183,15 +182,6 @@ float Plane::relative_ground_altitude(bool use_rangefinder_if_available)
 }
 
 /*
-  reset the altitude offset used for glide slopes
- */
-void Plane::reset_offset_altitude(void)
-{
-    altitudePlanner.reset_offset_altitude();
-}
-
-
-/*
   return true if current_loc is above loc. Used for glide slope
   calculations.
 
@@ -241,8 +231,6 @@ int32_t Plane::adjusted_relative_altitude_cm(void)
 {
     return (relative_altitude - altitudePlanner.mission_alt_offset())*100;
 }
-
-
 
 
 /*
@@ -349,11 +337,6 @@ void Plane::rangefinder_terrain_correction(float &height)
 #endif
 }
 
-
-void Plane::set_target_altitude_current(void)
-{
-  altitudePlanner.set_target_altitude_current(current_loc);
-}
 
 /*
   update the offset between rangefinder height and terrain height

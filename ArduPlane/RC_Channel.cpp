@@ -225,7 +225,7 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const AuxSwit
             case AuxSwitchPos::HIGH:
                 plane.non_auto_terrain_disable = true;
                 if (plane.control_mode->allows_terrain_disable()) {
-                    plane.set_target_altitude_current();
+                    plane.altitudePlanner.set_target_altitude_current();
                 }
                 break;
             case AuxSwitchPos::MIDDLE:
@@ -233,7 +233,7 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const AuxSwit
             case AuxSwitchPos::LOW:
                 plane.non_auto_terrain_disable = false;
                 if (plane.control_mode->allows_terrain_disable()) {
-                    plane.set_target_altitude_current();
+                    plane.altitudePlanner.set_target_altitude_current();
                 }
                 break;
             }

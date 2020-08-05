@@ -484,7 +484,7 @@ void Plane::do_continue_and_change_alt(const AP_Mission::Mission_Command& cmd)
 
     next_WP_loc.alt = cmd.content.location.alt + home.alt;
     condition_value = cmd.p1;
-    reset_offset_altitude();
+    altitudePlanner.reset_offset_altitude();
 }
 
 void Plane::do_altitude_wait(const AP_Mission::Mission_Command& cmd)

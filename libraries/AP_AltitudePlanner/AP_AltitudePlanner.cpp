@@ -19,11 +19,14 @@ void AP_AltitudePlanner::setup_glide_slope(const Location &start_loc, const Loca
     }
 }
 
-void AP_AltitudePlanner::set_target_altitude_current(const Location &loc)
+void AP_AltitudePlanner::set_target_altitude_current()
 {
     // record altitude above sea level at the current time as our
     // target altitude
-    _target_amsl_cm = loc.alt;
+    Location current_loc;
+    AP::ahrs().get_position(current_loc);
+
+    _target_amsl_cm = current_loc.alt;
 
     // reset any glide slope offset
     reset_offset_altitude();
@@ -43,12 +46,12 @@ void AP_AltitudePlanner::set_target_altitude_current(const Location &loc)
 #endif
 }
 
-void AP_AltitudePlanner::set_target_altitude_current_adjusted(const Location &loc)
+void AP_AltitudePlanner::set_target_altitude_current_adjusted()
 {
-    set_target_altitude_current(loc);
+    set_target_altitude_current();
 
     // use adjusted_altitude_cm() to take account of ALTITUDE_OFFSET
-    _target_amsl_cm = loc.alt - (mission_alt_offset()*100);
+    _target_amsl_cm -= mission_alt_offset()*100;
 }
 
 

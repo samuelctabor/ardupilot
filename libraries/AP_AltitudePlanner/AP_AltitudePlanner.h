@@ -34,13 +34,13 @@ public:
       setting up for altitude hold, such as when releasing elevator in
       CRUISE mode.
      */
-    void set_target_altitude_current(const Location &loc);
+    void set_target_altitude_current();
 
 
     /*
       set the target altitude to the current altitude, with ALT_OFFSET adjustment
      */
-    void set_target_altitude_current_adjusted(const Location &loc);
+    void set_target_altitude_current_adjusted();
 
     /*
       set target altitude based on a location structure
