@@ -90,11 +90,6 @@ void Plane::adjust_altitude_target()
     }
 
     altitude_error_cm = altitudePlanner.calc_altitude_error_cm(current_loc);
-
- 
-    float lookahead = lookahead_adjustment();
-    float range_correction = rangefinder_correction();
-    float target_alt = altitudePlanner.relative_target_altitude_cm(lookahead, range_correction);
 }
 
 /*
