@@ -94,6 +94,7 @@ void SITL_State::_usage(void)
            "\t--sim-port-in PORT       set port num for simulator in\n"
            "\t--sim-port-out PORT      set port num for simulator out\n"
            "\t--irlock-port PORT       set port num for irlock\n"
+           "\t--start-time TIMESTR     set simulation start time in format DD-MM-YYYY-HH-MM-SS"
         );
 }
 
@@ -218,6 +219,7 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
         CMDLINE_SIM_PORT_IN,
         CMDLINE_SIM_PORT_OUT,
         CMDLINE_IRLOCK_PORT,
+        CMDLINE_START_TIME,
     };
 
     const struct GetOptLong::option options[] = {
@@ -253,6 +255,7 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
         {"sim-port-in",     true,   0, CMDLINE_SIM_PORT_IN},
         {"sim-port-out",    true,   0, CMDLINE_SIM_PORT_OUT},
         {"irlock-port",     true,   0, CMDLINE_IRLOCK_PORT},
+        {"start-time",      true,   0, CMDLINE_START_TIME},
         {0, false, 0, 0}
     };
 
@@ -371,6 +374,8 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
         case CMDLINE_IRLOCK_PORT:
             _irlock_port = atoi(gopt.optarg);
             break;
+        case CMDLINE_START_TIME:
+            _start_time = gopt.optarg;
         default:
             _usage();
             exit(1);
