@@ -26,6 +26,9 @@ import binascii
 from pymavlink import mavextra
 from pysim import vehicleinfo
 
+import time
+import datetime
+
 # List of open terminal windows for macosx
 windowID = []
 
@@ -648,6 +651,11 @@ def start_vehicle(binary, opts, stuff, spawns=None):
     if opts.mcast:
         cmd.extend(["--uartA mcast:"])
 
+    if cmd_opts.start_time is not None:
+        # Parse start_time into a double precision number specifying seconds since 1900.
+        start_time_UTC = time.mktime(datetime.datetime.strptime(cmd_opts.start_time, '%Y-%m-%d-%H:%M:%S.%f').timetuple())
+        cmd.append("--start-time=%f" % start_time_UTC)
+
     old_dir = os.getcwd()
     for i, i_dir in zip(instances, instance_dir):
         c = ["-I" + str(i)]
@@ -1059,6 +1067,9 @@ group.add_option("", "--moddebug",
 group.add_option("", "--no-rcin",
                  action='store_true',
                  help="disable mavproxy rcin")
+group.add_option("", "--start-time",
+                 default=None,
+                 type='string')
 parser.add_option_group(group)
 
 group_completion = optparse.OptionGroup(parser, "Completion helpers")
@@ -1340,7 +1351,6 @@ if cmd_opts.frame in ['scrimmage-plane', 'scrimmage-copter']:
     with os.fdopen(tmp[0], 'w') as fd:
         fd.write(mission)
     run_in_terminal_window('SCRIMMAGE', ['scrimmage', tmp[1]])
-
 
 if cmd_opts.delay_start:
     progress("Sleeping for %f seconds" % (cmd_opts.delay_start,))

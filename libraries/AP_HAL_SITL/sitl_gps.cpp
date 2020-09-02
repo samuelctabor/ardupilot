@@ -109,14 +109,15 @@ void SITL_State::_gps_write(const uint8_t *p, uint16_t size, uint8_t instance)
 /*
   get timeval using simulation time
  */
-static void simulation_timeval(struct timeval *tv)
+void SITL_State::simulation_timeval(struct timeval *tv)
 {
     uint64_t now = AP_HAL::micros64();
     static uint64_t first_usec;
     static struct timeval first_tv;
     if (first_usec == 0) {
         first_usec = now;
-        gettimeofday(&first_tv, nullptr);
+        first_tv.tv_sec = _sitl->start_time_UTC;
+        // gettimeofday(&first_tv, nullptr);
     }
     *tv = first_tv;
     tv->tv_sec += now / 1000000ULL;
@@ -155,7 +156,7 @@ void SITL_State::_gps_send_ubx(uint8_t msgid, uint8_t *buf, uint16_t size, uint8
 /*
   return GPS time of week in milliseconds
  */
-static void gps_time(uint16_t *time_week, uint32_t *time_week_ms)
+void SITL_State::gps_time(uint16_t *time_week, uint32_t *time_week_ms)
 {
     struct timeval tv;
     simulation_timeval(&tv);

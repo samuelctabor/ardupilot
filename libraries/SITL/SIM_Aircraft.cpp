@@ -1010,7 +1010,7 @@ float Aircraft::solar_harvest(void)
     dcm.to_euler(&roll, &pitch, &yaw);
 
     // Convert from time_now_us to UTC static time using start time arg.
-    double timeUTCstatic = time_now_us + sitl->start_time_UTC;
+    double timeUTCstatic = sitl->start_time_UTC + time_now_us/1000000;
 
     float solarHarvest = estimateSolarHarvest( roll,  pitch,  yaw,  location.lat,  location.lng,  location.alt, timeUTCstatic, sitl->solar_nominal, 0.0);
     return solarHarvest;

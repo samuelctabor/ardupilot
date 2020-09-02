@@ -37,6 +37,9 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
+
 
 extern const AP_HAL::HAL& hal;
 
@@ -198,6 +201,12 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
     uint16_t simulator_port_in = SIM_IN_PORT;
     uint16_t simulator_port_out = SIM_OUT_PORT;
     _irlock_port = IRLOCK_PORT;
+
+    // Determine default start time of actual time.
+    static struct timeval first_tv;
+    gettimeofday(&first_tv, nullptr);
+    // Store seconds.
+    double start_time_UTC = first_tv.tv_sec;
 
     enum long_options {
         CMDLINE_GIMBAL = 1,
@@ -375,7 +384,7 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
             _irlock_port = atoi(gopt.optarg);
             break;
         case CMDLINE_START_TIME:
-            _start_time_UTC = strtof(gopt.optarg, nullptr);
+            start_time_UTC = strtof(gopt.optarg, nullptr);
             break;
         default:
             _usage();
@@ -420,6 +429,8 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
         printf("Vehicle model (%s) not found\n", model_str);
         exit(1);
     }
+
+    AP::sitl()->start_time_UTC = start_time_UTC;
 
     fprintf(stdout, "Starting sketch '%s'\n", SKETCH);
 
