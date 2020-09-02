@@ -94,7 +94,6 @@ double estimateSolarHarvest(double roll, double pitch, double yaw, double latitu
     // estimate the solar intensity(direct solar insolation)
     // from Kastenand young(1989)
     // https://www.sku.ac.ir/Datafiles/BookLibrary/45/John%20A.%20Duffie,%20William%20A.%20Beckman(auth.)-Solar%20Engineering%20of%20Thermal%20Processes,%20Fourth%20Edition%20(2013).pdf footnote 3
-
     double solarZenithAngleDeg = 90 - solarElevationAngleDeg;
 
     double airMassFactor = exp(-0.0001184 * elevation) / (cos(deg2rad(solarZenithAngleDeg)) + 0.5057 * pow(96.080 - solarZenithAngleDeg, -1.634));
@@ -181,8 +180,6 @@ void calculatezVec(double roll, double pitch, double yaw, double zVec[])
 void calculateSunVector(double outArr[], double latitude, double longitude, double timeUTC)
 {
     // This is based on the NOAA excel sheet https://www.esrl.noaa.gov/gmd/grad/solcalc/calcdetails.html
-
-
     double days = timeUTC / 86400.0; //convert timeUTC to days from seconds, because excel and matlab use days
     double timeOnly = fmod(days, 1); //Get fraction of current day (this ignores leap seconds encountered since epoch)
     double julianDay = days + 719529 + 1721058.5; // find number of days since start (about 4715BC), first convert to year 0 the count backwards from there.
@@ -192,20 +189,15 @@ void calculateSunVector(double outArr[], double latitude, double longitude, doub
     double eccentEarthOrbit = 0.016708634 - julianCentury * (0.000042037 + 0.0000001267 * julianCentury);
     double sunEqOfCtr = sin(deg2rad(geomMeanAnomSunDeg)) * (1.914602 - julianCentury * (0.004817 + 0.000014 * julianCentury)) + sin(deg2rad(2 * geomMeanAnomSunDeg)) * (0.019993 - 0.000101 * julianCentury) + sin(deg2rad(3 * geomMeanAnomSunDeg)) * 0.000289;
     double sunTrueLongDeg = geomMeanLongSunDeg + sunEqOfCtr;
-    // double sunTrueAnomDeg = geomMeanAnomSunDeg + sunEqOfCtr;
-    // double sunRadVectorAUs = (1.000001018 * (1 - eccentEarthOrbit * eccentEarthOrbit)) / (1 + eccentEarthOrbit * cos(deg2rad(sunTrueAnomDeg)));
+
     double sunAppLongDeg = sunTrueLongDeg - 0.00569 - 0.00478 * sin(rad2deg(125.04 - 1934.136 * julianCentury));
     double meanObliqEclipticDeg = 23 + (26 + ((21.448 - julianCentury * (46.815 + julianCentury * (0.00059 - julianCentury * 0.001813)))) / 60) / 60;
     double obliqCorrDeg = meanObliqEclipticDeg + 0.00256 * cos(deg2rad(125.04 - 1934.136 * julianCentury));
-    // double sunRtAscenDeg = rad2deg(atan2(cos(deg2rad(obliqCorrDeg)) * sin(deg2rad(sunAppLongDeg)), cos(deg2rad(sunAppLongDeg))));// atan2 is x, y in exceland y, x in matlab
+
     double sunDeclinDeg = rad2deg(asin(sin(deg2rad(obliqCorrDeg)) * sin(deg2rad(sunAppLongDeg))));
     double varY = tan(deg2rad(obliqCorrDeg / 2)) * tan(deg2rad(obliqCorrDeg / 2));
     double eqOfTimeMin = 4 * rad2deg(varY * sin(2 * deg2rad(geomMeanLongSunDeg)) - 2 * eccentEarthOrbit * sin(deg2rad(geomMeanAnomSunDeg)) + 4 * eccentEarthOrbit * varY * sin(deg2rad(geomMeanAnomSunDeg)) * cos(2 * deg2rad(geomMeanLongSunDeg)) - 0.5 * varY * varY * sin(4 * deg2rad(geomMeanLongSunDeg)) - 1.25 * eccentEarthOrbit * eccentEarthOrbit * sin(2 * deg2rad(geomMeanAnomSunDeg)));
-    // double haSunriseDeg = rad2deg(acos(cos(deg2rad(90.833)) / (cos(deg2rad(latitude)) * cos(deg2rad(sunDeclinDeg))) - tan(deg2rad(latitude)) * tan(deg2rad(sunDeclinDeg))));
-    // double solarNoonLST = (720 - 4 * longitude - eqOfTimeMin) / 1440;
-    // double sunriseTimeLST = solarNoonLST - haSunriseDeg * 4 / 1440;
-    // double sunsetTimeLST = solarNoonLST + haSunriseDeg * 4 / 1440;
-    // double sunlightDurationMin = 8 * haSunriseDeg;
+
     double trueSolarTimeMin = fmod(timeOnly * 1440 + eqOfTimeMin + 4 * longitude, 1440);
 
     double hourAngleDeg;
