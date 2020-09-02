@@ -174,8 +174,6 @@ private:
     void _fdm_input_step(void);
 
     void wait_clock(uint64_t wait_time_usec);
-    void simulation_timeval(struct timeval *tv);
-    void gps_time(uint16_t *time_week, uint32_t *time_week_ms);
 
     // internal state
     enum vehicle_type _vehicle;

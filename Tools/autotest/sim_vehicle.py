@@ -1036,6 +1036,9 @@ group_sim.add_option("--disable-ekf2",
 group_sim.add_option("--disable-ekf3",
                      action='store_true',
                      help="disable EKF3 in build")
+group_sim.add_option("", "--start-time",
+                     default=None,
+                     type='string')
 parser.add_option_group(group_sim)
 
 
@@ -1067,9 +1070,7 @@ group.add_option("", "--moddebug",
 group.add_option("", "--no-rcin",
                  action='store_true',
                  help="disable mavproxy rcin")
-group.add_option("", "--start-time",
-                 default=None,
-                 type='string')
+
 parser.add_option_group(group)
 
 group_completion = optparse.OptionGroup(parser, "Completion helpers")
@@ -1351,6 +1352,7 @@ if cmd_opts.frame in ['scrimmage-plane', 'scrimmage-copter']:
     with os.fdopen(tmp[0], 'w') as fd:
         fd.write(mission)
     run_in_terminal_window('SCRIMMAGE', ['scrimmage', tmp[1]])
+
 
 if cmd_opts.delay_start:
     progress("Sleeping for %f seconds" % (cmd_opts.delay_start,))

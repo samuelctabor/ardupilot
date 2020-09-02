@@ -40,7 +40,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-
 extern const AP_HAL::HAL& hal;
 
 using namespace HALSITL;
@@ -97,7 +96,7 @@ void SITL_State::_usage(void)
            "\t--sim-port-in PORT       set port num for simulator in\n"
            "\t--sim-port-out PORT      set port num for simulator out\n"
            "\t--irlock-port PORT       set port num for irlock\n"
-           "\t--start-time TIMESTR     set simulation start time in format DD-MM-YYYY-HH-MM-SS"
+           "\t--start-time TIMESTR     set simulation start time in UNIX timestamp"
         );
 }
 
@@ -207,6 +206,7 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
     gettimeofday(&first_tv, nullptr);
     // Store seconds.
     double start_time_UTC = first_tv.tv_sec;
+    ::printf("Initial time %f\n", start_time_UTC);
 
     enum long_options {
         CMDLINE_GIMBAL = 1,
@@ -431,6 +431,8 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
     }
 
     AP::sitl()->start_time_UTC = start_time_UTC;
+
+    ::printf("Using time %f\n", start_time_UTC);
 
     fprintf(stdout, "Starting sketch '%s'\n", SKETCH);
 
