@@ -233,6 +233,9 @@ const AP_Param::GroupInfo SITL::var_info3[] = {
     AP_GROUPINFO("BARO2_DISABL", 34, SITL,  baro_disable[1], 0),
     AP_GROUPINFO("BARO2_GLITCH", 35, SITL,  baro_glitch[1], 0),
 
+    // solar nominal harvest
+    AP_GROUPINFO("SOLAR_NOMINAL", 36, SITL, solar_nominal, 0),
+
     AP_GROUPEND
 };
 

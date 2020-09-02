@@ -375,7 +375,8 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
             _irlock_port = atoi(gopt.optarg);
             break;
         case CMDLINE_START_TIME:
-            _start_time = gopt.optarg;
+            _start_time_UTC = strtof(gopt.optarg, nullptr);
+            break;
         default:
             _usage();
             exit(1);

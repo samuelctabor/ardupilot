@@ -1003,3 +1003,15 @@ void Aircraft::add_twist_forces(Vector3f &rot_accel)
         sitl->twist.t = 0;
     }
 }
+
+float Aircraft::solar_harvest(void)
+{
+    float roll, pitch, yaw;
+    dcm.to_euler(&roll, &pitch, &yaw);
+
+    // Convert from time_now_us to UTC static time using start time arg.
+    double timeUTCstatic = time_now_us + sitl->start_time_UTC;
+
+    float solarHarvest = estimateSolarHarvest( roll,  pitch,  yaw,  location.lat,  location.lng,  location.alt, timeUTCstatic, sitl->solar_nominal, 0.0);
+    return solarHarvest;
+}

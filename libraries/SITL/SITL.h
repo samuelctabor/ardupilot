@@ -20,6 +20,7 @@
 #include "SIM_EFI_MegaSquirt.h"
 #include "SIM_RichenPower.h"
 #include "SIM_Ship.h"
+#include "SIM_SolarHarvest.h"
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
 namespace SITL {
@@ -286,6 +287,9 @@ public:
     AP_Int8 gyro_fail_mask;
     AP_Int8 accel_fail_mask;
 
+    // nominal solar harvest, W
+    AP_Float solar_nominal;
+
     struct {
         AP_Float x;
         AP_Float y;
@@ -341,6 +345,8 @@ public:
     }
 
     uint16_t irlock_port;
+
+    float start_time_UTC;
 
     void simstate_send(mavlink_channel_t chan);
 

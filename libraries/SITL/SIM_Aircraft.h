@@ -282,6 +282,9 @@ protected:
     // get local thermal updraft
     float get_local_updraft(Vector3f currentPos);
 
+    // get solar harvest, in watts
+    float solar_harvest(void);
+
 private:
     uint64_t last_time_us = 0;
     uint32_t frame_counter = 0;
