@@ -653,7 +653,12 @@ def start_vehicle(binary, opts, stuff, spawns=None):
 
     if cmd_opts.start_time is not None:
         # Parse start_time into a double precision number specifying seconds since 1900.
-        start_time_UTC = time.mktime(datetime.datetime.strptime(cmd_opts.start_time, '%Y-%m-%d-%H:%M:%S.%f').timetuple())
+        try:
+            start_time_UTC = time.mktime(datetime.datetime.strptime(cmd_opts.start_time, '%Y-%m-%d-%H:%M').timetuple())
+        except:
+            print("Incorrect start time format - require YYYY-MM-DD-HH:MM (given %s)" % cmd_opts.start_time)
+            sys.exit(1)
+
         cmd.append("--start-time=%f" % start_time_UTC)
 
     old_dir = os.getcwd()
@@ -1038,7 +1043,8 @@ group_sim.add_option("--disable-ekf3",
                      help="disable EKF3 in build")
 group_sim.add_option("", "--start-time",
                      default=None,
-                     type='string')
+                     type='string',
+                     help="specify simulation start time in format YYYY-MM-DD-HH:MM")
 parser.add_option_group(group_sim)
 
 
