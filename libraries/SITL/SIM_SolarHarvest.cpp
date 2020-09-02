@@ -5,7 +5,7 @@
 
 namespace SITL {
 
-int SIM_SolarHarvest::runTest()
+int runTest()
 {
     //Declare Variables
     double  roll, pitch, yaw;
@@ -65,7 +65,7 @@ int SIM_SolarHarvest::runTest()
     return 0; // succesfully ran
 }
 
-double SIM_SolarHarvest::estimateSolarHarvest(double roll, double pitch, double yaw, double latitude, double longitude, double elevation, double timeUTC, double solarPowerRef, int cloudOctas)
+double estimateSolarHarvest(double roll, double pitch, double yaw, double latitude, double longitude, double elevation, double timeUTC, double solarPowerRef, int cloudOctas)
 {
     double solarHarvest;   
     double solarPower;
@@ -133,7 +133,7 @@ double SIM_SolarHarvest::estimateSolarHarvest(double roll, double pitch, double 
 
 
 //Function to take in roll,pitch,yaw Euler angles and return the aircraft down vector.
-void SIM_SolarHarvest::calculatezVec(double roll, double pitch, double yaw, double zVec[])
+void calculatezVec(double roll, double pitch, double yaw, double zVec[])
 {
     int i, j, k; //steppers used in for loop
 
@@ -176,7 +176,7 @@ void SIM_SolarHarvest::calculatezVec(double roll, double pitch, double yaw, doub
 }
 
 // Functotion to calculate the sun vector
-void SIM_SolarHarvest::calculateSunVector(double outArr[], double latitude, double longitude, double timeUTC)
+void calculateSunVector(double outArr[], double latitude, double longitude, double timeUTC)
 {
     // This is based on the NOAA excel sheet https://www.esrl.noaa.gov/gmd/grad/solcalc/calcdetails.html
 
@@ -247,7 +247,7 @@ void SIM_SolarHarvest::calculateSunVector(double outArr[], double latitude, doub
 }
 
 //calculates the harvest given the sun power and direction
-double SIM_SolarHarvest::calculateHarvest(double solarPowerRef, double normalSolarPower,  double angleOfIncidence)
+double calculateHarvest(double solarPowerRef, double normalSolarPower,  double angleOfIncidence)
 {
     //total power is the number of cells * the cell power at 1000W / m ^ 2
     //then modified by the actual solar power / 1000W / m ^ 2
@@ -283,7 +283,7 @@ double SIM_SolarHarvest::calculateHarvest(double solarPowerRef, double normalSol
 }
 
 //cloudCoverReduction Estimate the radiation fraction reaching the surface through cloud cover.
-double SIM_SolarHarvest::cloudCoverFactor(int cloudOctas, double sunElevationAngle)
+double cloudCoverFactor(int cloudOctas, double sunElevationAngle)
 {
      // Based on https ://rmets.onlinelibrary.wiley.com/doi/full/10.1002/joc.2432 table 1
 
@@ -294,7 +294,7 @@ double SIM_SolarHarvest::cloudCoverFactor(int cloudOctas, double sunElevationAng
 }
 
 // converts angle from degrees to radians
-double SIM_SolarHarvest::deg2rad(double deg)
+double deg2rad(double deg)
 {
     
 
@@ -302,7 +302,7 @@ double SIM_SolarHarvest::deg2rad(double deg)
 }
 
 // converts angle from radians to degrees
-double SIM_SolarHarvest::rad2deg(double rad)
+double rad2deg(double rad)
 {
     
 
@@ -310,7 +310,7 @@ double SIM_SolarHarvest::rad2deg(double rad)
 }
 
 // returns largest of 2 doubles
-double SIM_SolarHarvest::max(double in1, double in2)
+double max(double in1, double in2)
 {
     // returns largest of 2 doubles
 
