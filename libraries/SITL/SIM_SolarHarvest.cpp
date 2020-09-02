@@ -9,8 +9,8 @@ int runTest()
 {
     //Declare Variables
     double  roll, pitch, yaw;
-    double  latitude, longitude, elevation;       
-    double  solarPowerRef; 
+    double  latitude, longitude, elevation;
+    double  solarPowerRef;
     double  solarHarvest;
     double printTime;
     int     cloudOctas;
@@ -18,7 +18,7 @@ int runTest()
     struct  tm * timeinfo;
     time_t  rawtime;
     time_t  timeUTCstatic;
-    
+
 
     //Input values for test
     roll            = 0;
@@ -27,20 +27,20 @@ int runTest()
     latitude        = 33;       //deg
     longitude       = -114.3;   //deg
     longitude       = 0;        //deg
-    elevation       = 250;      //m 
-    cloudOctas      = 0;    
+    elevation       = 250;      //m
+    cloudOctas      = 0;
     solarPowerRef   = 173;      // W - the harvest from the whole aircraft in 1000W/m^2 normal to the surface
-    
+
 
     year            = 2020;
     month           = 07;
     day             = 22;
     hour            = 15;
     minute          = 0;
-    
+
     time(&rawtime);                         //get current UTC
     timeinfo            = gmtime(&rawtime); // convert time from time_t to struct in UTC
-    timeinfo->tm_year   = year - 1900;      // The number of years since 1900 
+    timeinfo->tm_year   = year - 1900;      // The number of years since 1900
     timeinfo->tm_mon    = month - 1;        //month, range 0 to 11 not 1-12 so needs modifier
     timeinfo->tm_mday   = day;
     timeinfo->tm_hour   = hour ;
@@ -51,23 +51,23 @@ int runTest()
     // do set time
     // call mktime: timeinfo->tm_wday will be set
     timeUTCstatic = mktime(timeinfo) - timezone + daylight*60*60; //timezone is time from utc in seconds, daylight is flag of if DST is on/off
-    printTime = timeUTCstatic / 86400.0;    
+    printTime = timeUTCstatic / 86400.0;
     printf("timeinfo %f\n", printTime);     // print in days
 
     struct tm convertedtiminfo = *gmtime(&timeUTCstatic);
     printf("target: %d-%02d-%02d %02d:%02d:%02d\n", convertedtiminfo.tm_year + 1900, convertedtiminfo.tm_mon + 1, convertedtiminfo.tm_mday, convertedtiminfo.tm_hour, convertedtiminfo.tm_min, convertedtiminfo.tm_sec);
 
 
-    
+
     solarHarvest = estimateSolarHarvest( roll,  pitch,  yaw,  latitude,  longitude,  elevation, timeUTCstatic, solarPowerRef, cloudOctas);
     printf("The solar estimate is %f\n", solarHarvest);
-        
+
     return 0; // succesfully ran
 }
 
 double estimateSolarHarvest(double roll, double pitch, double yaw, double latitude, double longitude, double elevation, double timeUTC, double solarPowerRef, int cloudOctas)
 {
-    double solarHarvest;   
+    double solarHarvest;
     double solarPower;
 
     // Calculate zVec, which is the aircraft down vector
@@ -77,12 +77,12 @@ double estimateSolarHarvest(double roll, double pitch, double yaw, double latitu
 
 
     // Calculate the sun direction
-    double sunVeccalculateSunVectorOutput[4] = { 0 }; // Array of N, E, D vector with "solarElevationAngleDeg" as final value in array    
+    double sunVeccalculateSunVectorOutput[4] = { 0 }; // Array of N, E, D vector with "solarElevationAngleDeg" as final value in array
     calculateSunVector(sunVeccalculateSunVectorOutput, latitude, longitude, timeUTC);
     double sunVec[3] = { sunVeccalculateSunVectorOutput[0],  sunVeccalculateSunVectorOutput[1],  sunVeccalculateSunVectorOutput[2] }; //N E D
-    double solarElevationAngleDeg = sunVeccalculateSunVectorOutput[3];    
-    // now know the sun's location N,E,D and solarElevationAngleDeg 
-        
+    double solarElevationAngleDeg = sunVeccalculateSunVectorOutput[3];
+    // now know the sun's location N,E,D and solarElevationAngleDeg
+
     if (solarElevationAngleDeg < 0) {
         // sun is below horizon so no sun
         solarHarvest = 0;
@@ -91,16 +91,16 @@ double estimateSolarHarvest(double roll, double pitch, double yaw, double latitu
 
     // estimate the solar intensity(direct solar insolation)
     // from Kastenand young(1989)
-    // https://www.sku.ac.ir/Datafiles/BookLibrary/45/John%20A.%20Duffie,%20William%20A.%20Beckman(auth.)-Solar%20Engineering%20of%20Thermal%20Processes,%20Fourth%20Edition%20(2013).pdf footnote 3 
+    // https://www.sku.ac.ir/Datafiles/BookLibrary/45/John%20A.%20Duffie,%20William%20A.%20Beckman(auth.)-Solar%20Engineering%20of%20Thermal%20Processes,%20Fourth%20Edition%20(2013).pdf footnote 3
 
     double solarZenithAngleDeg = 90 - solarElevationAngleDeg;
-    printf("solarZenithAngleDeg %f\n", solarZenithAngleDeg);     
-            
+    printf("solarZenithAngleDeg %f\n", solarZenithAngleDeg);
+
     double airMassFactor = exp(-0.0001184 * elevation) / (cos(deg2rad(solarZenithAngleDeg)) + 0.5057 * pow(96.080 - solarZenithAngleDeg, -1.634));
     printf("airMassFactor %f\n", airMassFactor);
 
-    //done using forumla found on https ://en.wikipedia.org/wiki/Direct_insolation    
-    solarPower = 1353 * pow(0.7 , pow(airMassFactor,0.678));    
+    //done using forumla found on https ://en.wikipedia.org/wiki/Direct_insolation
+    solarPower = 1353 * pow(0.7 , pow(airMassFactor,0.678));
     printf("solarPower %f\n", solarPower);
     // now we know the Solar Power
 
@@ -117,10 +117,10 @@ double estimateSolarHarvest(double roll, double pitch, double yaw, double latitu
     solarPowerFac = zVec[0] * sunVec[0] + zVec[1] * sunVec[1] + zVec[2] * sunVec[2];
     printf("solarPowerFac %f\n", solarPowerFac);
 
-    angleOfIncidence = acos(solarPowerFac);         // this assumes zVecand sunVec have magnitude of 1, 
+    angleOfIncidence = acos(solarPowerFac);         // this assumes zVecand sunVec have magnitude of 1,
     solarPowerFac = max(0, solarPowerFac);          // a negative power fraction indicates sun is shining on underside of wings.
     normalSolarPower = solarPowerFac * solarPower;  // W/m^2
-                        
+
     //calculate the power generated by the solar panels in the given conditions
     solarHarvest = calculateHarvest(solarPowerRef, normalSolarPower, angleOfIncidence);
     printf("solarHarvest %f\n", solarHarvest);
@@ -142,7 +142,7 @@ void calculatezVec(double roll, double pitch, double yaw, double zVec[])
     double   T2[3][3] = { {cos(pitch), 0, sin(pitch)},{0, 1, 0,},{-sin(pitch), 0, cos(pitch)} };
     double   T3[3][3] = { {cos(yaw), -sin(yaw), 0},{sin(yaw), cos(yaw), 0},{0,0,1} };
     double  T23[3][3] = { 0 }; //Create empty 3x3 array for result of multipliyng T2 and T3
-    double    T[3][3] = { 0 }; //Create empty 3x3 array for result of multipliyng T1 and T23 (i.e. T=T1*T2*T3)   
+    double    T[3][3] = { 0 }; //Create empty 3x3 array for result of multipliyng T1 and T23 (i.e. T=T1*T2*T3)
 
     // multiply T23=T2*T3
     printf("T: \n");
@@ -172,7 +172,7 @@ void calculatezVec(double roll, double pitch, double yaw, double zVec[])
         printf("zVec %f\n", zVec[i]);
     }
 
-    
+
 }
 
 // Functotion to calculate the sun vector
@@ -185,7 +185,7 @@ void calculateSunVector(double outArr[], double latitude, double longitude, doub
     double timeOnly = fmod(days, 1); //Get fraction of current day (this ignores leap seconds encountered since epoch)
     double julianDay = days + 719529 + 1721058.5; // find number of days since start (about 4715BC), first convert to year 0 the count backwards from there.
     printf("julianDay %f\n", julianDay);
-    double julianCentury = (julianDay - 2451545) / 36525;    
+    double julianCentury = (julianDay - 2451545) / 36525;
     double geomMeanLongSunDeg = fmod(280.46646 + julianCentury * (36000.76983 + julianCentury * 0.0003032), 360);
     double geomMeanAnomSunDeg = 357.52911 + julianCentury * (35999.05029 - 0.0001537 * julianCentury);
     double eccentEarthOrbit = 0.016708634 - julianCentury * (0.000042037 + 0.0000001267 * julianCentury);
@@ -239,7 +239,7 @@ void calculateSunVector(double outArr[], double latitude, double longitude, doub
     printf("E %f\n", E);
     printf("D %f\n", D);
 
-    // now know the sun's location N,E,D and solarElevationAngleDeg 
+    // now know the sun's location N,E,D and solarElevationAngleDeg
     outArr[0] = N;
     outArr[1] = E;
     outArr[2] = D;
@@ -254,8 +254,8 @@ double calculateHarvest(double solarPowerRef, double normalSolarPower,  double a
     double estimatedSolarHarvest = solarPowerRef * normalSolarPower / 1000;
 
     //calculate the 3 efficiencies (temperature, irradiance, incidence)
-    double cellTemperatureEfficiency = 1; // not using this currently      
-    double solarIrradianceEfficiency = 1; // not using this currently    
+    double cellTemperatureEfficiency = 1; // not using this currently
+    double solarIrradianceEfficiency = 1; // not using this currently
 
     // index of refraction modifier based on https://pvpmc.sandia.gov/modeling-steps/1-weather-design-inputs/shading-soiling-and-reflection-losses/incident-angle-reflection-losses/physical-model-of-iam/
     double indexOfRefraction = 1.35; // 1.526 for glass, 1.35 for teflon
@@ -278,7 +278,7 @@ double calculateHarvest(double solarPowerRef, double normalSolarPower,  double a
 
     //Additional 10 % loss seems to match the data and models from Atlantik Solar
     return 0.95 * estimatedSolarHarvest * finalEfficiency;
-   
+
 
 }
 
@@ -287,7 +287,7 @@ double cloudCoverFactor(int cloudOctas, double sunElevationAngle)
 {
      // Based on https ://rmets.onlinelibrary.wiley.com/doi/full/10.1002/joc.2432 table 1
 
-    
+
 
 
     return 0;
@@ -296,7 +296,7 @@ double cloudCoverFactor(int cloudOctas, double sunElevationAngle)
 // converts angle from degrees to radians
 double deg2rad(double deg)
 {
-    
+
 
     return (M_PI / 180) * deg;
 }
@@ -304,7 +304,7 @@ double deg2rad(double deg)
 // converts angle from radians to degrees
 double rad2deg(double rad)
 {
-    
+
 
     return (180 / M_PI) * rad;
 }
