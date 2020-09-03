@@ -71,6 +71,8 @@ struct sitl_fdm {
     } scanner;
 
     float rangefinder_m[RANGEFINDER_MAX_INSTANCES];
+
+    float solar_harvest; // current solar power
 };
 
 // number of rc output channels

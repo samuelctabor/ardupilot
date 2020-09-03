@@ -380,6 +380,8 @@ void Aircraft::fill_fdm(struct sitl_fdm &fdm)
     fdm.scanner.points = scanner.points;
     fdm.scanner.ranges = scanner.ranges;
 
+    fdm.solar_harvest = solar_harvest();
+
     // copy rangefinder
     memcpy(fdm.rangefinder_m, rangefinder_m, sizeof(fdm.rangefinder_m));
 
@@ -1013,6 +1015,6 @@ float Aircraft::solar_harvest(void)
     // Convert from time_now_us to UTC static time using start time arg.
     double timeUTCstatic = sitl->start_time_UTC + time_now_us/1000000;
 
-    float solarHarvest = estimateSolarHarvest( roll,  pitch,  yaw,  location.lat,  location.lng,  location.alt, timeUTCstatic, sitl->solar_nominal, 0.0);
+    float solarHarvest = estimateSolarHarvest( roll,  pitch,  yaw,  (double)location.lat/10000000,  (double)location.lng/10000000,  (double)location.alt/100, timeUTCstatic, sitl->solar_nominal, 0.0);
     return solarHarvest;
 }

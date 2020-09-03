@@ -358,6 +358,12 @@ void SITL::Log_Write_SIMSTATE()
         q4      : state.quaternion.q4,
     };
     AP::logger().WriteBlock(&pkt, sizeof(pkt));
+
+
+    AP::logger().Write("SIM2", "TimeUS,time,solar", "Qff",
+                                       AP_HAL::micros64(),
+                                       (double)start_time_UTC + AP_HAL::micros64()/1000000,
+                                       (double)state.solar_harvest);
 }
 
 /*
