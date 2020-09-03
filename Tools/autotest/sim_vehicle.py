@@ -1076,7 +1076,6 @@ group.add_option("", "--moddebug",
 group.add_option("", "--no-rcin",
                  action='store_true',
                  help="disable mavproxy rcin")
-
 parser.add_option_group(group)
 
 group_completion = optparse.OptionGroup(parser, "Completion helpers")

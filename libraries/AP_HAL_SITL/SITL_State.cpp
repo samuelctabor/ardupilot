@@ -103,9 +103,6 @@ void SITL_State::_sitl_setup(const char *home_str)
 
         fprintf(stdout, "Using Irlock at port : %d\n", _irlock_port);
         _sitl->irlock_port = _irlock_port;
-
-        fprintf(stdout, "Start time UTC : %f\n", _start_time_UTC);
-        _sitl->start_time_UTC = _start_time_UTC;
     }
 
     if (_synthetic_clock_mode) {
