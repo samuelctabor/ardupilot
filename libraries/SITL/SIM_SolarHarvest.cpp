@@ -307,5 +307,4 @@ double max(double in1, double in2)
     }
 }
 
-
 } // namespace SITL

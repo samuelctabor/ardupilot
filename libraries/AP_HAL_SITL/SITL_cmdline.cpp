@@ -201,12 +201,11 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
     uint16_t simulator_port_out = SIM_OUT_PORT;
     _irlock_port = IRLOCK_PORT;
 
-    // Determine default start time of actual time.
+    // Set default start time to the real system time.
+    // This will be overwritten if argument provided.
     static struct timeval first_tv;
     gettimeofday(&first_tv, nullptr);
-    // Store seconds.
     double start_time_UTC = first_tv.tv_sec;
-    ::printf("Initial time %f\n", start_time_UTC);
 
     enum long_options {
         CMDLINE_GIMBAL = 1,
@@ -430,9 +429,8 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
         exit(1);
     }
 
+    // Set SITL start time.
     AP::sitl()->start_time_UTC = start_time_UTC;
-
-    ::printf("Using time %f\n", start_time_UTC);
 
     fprintf(stdout, "Starting sketch '%s'\n", SKETCH);
 

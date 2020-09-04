@@ -282,10 +282,9 @@ void Aircraft::sync_frame_time(void)
         const float achieved_rate_hz = (frame_counter - last_frame_count) / dt_wall;
         last_frame_count = frame_counter;
         last_fps_report_ms = now_ms;
-        ::printf("Rate: target:%.1f achieved:%.1f speedup %.1f/%.1f time %f\n",
+        ::printf("Rate: target:%.1f achieved:%.1f speedup %.1f/%.1f",
                  rate_hz*target_speedup, achieved_rate_hz,
-                 achieved_rate_hz/rate_hz, target_speedup,
-                 sitl->start_time_UTC + time_now_us/1000000);
+                 achieved_rate_hz/rate_hz, target_speedup);
     }
 }
 
