@@ -2005,6 +2005,16 @@ class AutoTestPlane(AutoTest):
         if ex is not None:
             raise ex
 
+    def fly_circuit_mission(self):
+
+        self.customise_SITL_commandline([], wipe=True)
+
+        self.mavproxy.send("wp set 1\n")
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+
+        self.fly_mission("ap-circuit.txt", mission_timeout=600)
+
     def tests(self):
         '''return list of all tests'''
         ret = super(AutoTestPlane, self).tests()
@@ -2129,6 +2139,10 @@ class AutoTestPlane(AutoTest):
             ("EKFlaneswitch",
              "Test EKF3 Affinity and Lane Switching",
              self.ekf_lane_switch),
+
+            ("Circuit",
+             "Test simple circuit",
+             self.fly_circuit_mission),
 
             ("LogUpload",
              "Log upload",
