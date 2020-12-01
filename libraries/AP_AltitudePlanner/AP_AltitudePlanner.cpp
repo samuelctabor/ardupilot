@@ -48,7 +48,7 @@ void AP_AltitudePlanner::set_target_altitude_current_adjusted(const Location &lo
     set_target_altitude_current(loc);
 
     // use adjusted_altitude_cm() to take account of ALTITUDE_OFFSET
-    _target_amsl_cm = loc.alt - (mission_alt_offset()*100);
+    _target_amsl_cm = loc.alt - (get_mission_alt_offset()*100);
 }
 
 
@@ -79,7 +79,7 @@ void AP_AltitudePlanner::set_target_altitude_location(const Location &loc)
 #endif
 }
 
-int32_t AP_AltitudePlanner::relative_target_altitude_cm(float lookahead_adjustment, float rangefinder_correction)
+int32_t AP_AltitudePlanner::get_relative_target_altitude_cm(float lookahead_adjustment, float rangefinder_correction)
 {
 #if AP_TERRAIN_AVAILABLE
     float relative_home_height;
@@ -99,7 +99,7 @@ int32_t AP_AltitudePlanner::relative_target_altitude_cm(float lookahead_adjustme
     }
 #endif
     int32_t relative_alt = _target_amsl_cm - AP::ahrs().get_home().alt;
-    relative_alt += mission_alt_offset()*100;
+    relative_alt += get_mission_alt_offset()*100;
     relative_alt += rangefinder_correction * 100;
     return relative_alt;
 }
@@ -151,7 +151,7 @@ int32_t AP_AltitudePlanner::calc_altitude_error_cm(Location loc)
         return _target_lookahead*100 + _target_terrain_alt_cm - (terrain_height*100);
     }
 #endif
-    return _target_amsl_cm - (loc.alt - mission_alt_offset()*100);
+    return _target_amsl_cm - (loc.alt - get_mission_alt_offset()*100);
 }
 
 
@@ -237,12 +237,12 @@ bool AP_AltitudePlanner::above_location(const Location &loc1, const Location &lo
 }
 
 
-float AP_AltitudePlanner::mission_alt_offset(void) const {
+float AP_AltitudePlanner::get_mission_alt_offset(void) const {
     return _aparm.alt_offset + _additional_alt_offset;
 }
 
 
-float AP_AltitudePlanner::height_above_target(const Location& loc, const Location& target_loc)
+float AP_AltitudePlanner::get_height_above_target(const Location& loc, const Location& target_loc)
 {
     float target_alt = target_loc.alt*0.01;
     if (!target_loc.relative_alt) {
@@ -258,5 +258,5 @@ float AP_AltitudePlanner::height_above_target(const Location& loc, const Locatio
     }
 #endif
 
-    return (loc.alt*0.01f - mission_alt_offset() - AP::ahrs().get_home().alt*0.01f) - target_alt;
+    return (loc.alt*0.01f - get_mission_alt_offset() - AP::ahrs().get_home().alt*0.01f) - target_alt;
 }

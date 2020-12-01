@@ -51,7 +51,7 @@ public:
       return relative to home target altitude in centimeters. Used for
       altitude control libraries
      */
-    int32_t relative_target_altitude_cm(float lookahead_adjustment, float rangefinder_correction);
+    int32_t get_relative_target_altitude_cm(float lookahead_adjustment, float rangefinder_correction);
 
     /*
     change the current target altitude by an amount in centimeters. Used
@@ -122,10 +122,10 @@ public:
       but can also be adjusted by the rangefinder landing code for a
       NAV_LAND command if we have aborted a steep landing
      */
-    float mission_alt_offset(void) const;
+    float get_mission_alt_offset(void) const;
 
         // Get the height above the target location.
-    float height_above_target(const Location& loc, const Location& target_loc);
+    float get_height_above_target(const Location& loc, const Location& target_loc);
 
     // Set an additional altitude offset to be applied to mission items/
     void set_additional_alt_offset(float offset) {_additional_alt_offset = offset;};

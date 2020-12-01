@@ -439,7 +439,6 @@ public:
 
     // Navigational maneuvering limits
     //
-    AP_Int16 alt_offset;
     AP_Int16 acro_roll_rate;
     AP_Int16 acro_pitch_rate;
     AP_Int8  acro_locking;
@@ -479,11 +478,8 @@ public:
     AP_Float takeoff_pitch_limit_reduction_sec;
     AP_Int8 level_roll_limit;
 #if AP_TERRAIN_AVAILABLE
-    AP_Int8 terrain_follow;
     AP_Int16 terrain_lookahead;
 #endif
-    AP_Int16 glide_slope_min;
-    AP_Float glide_slope_threshold;
     AP_Int8 fbwa_tdrag_chan;
     AP_Int8 rangefinder_landing;
     AP_Int8 flap_slewrate;
