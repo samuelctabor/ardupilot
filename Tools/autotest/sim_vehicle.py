@@ -614,12 +614,23 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         path = ",".join(paths)
         progress("Using defaults from (%s)" % (path,))
     if opts.add_param_file:
-        if not os.path.isfile(opts.add_param_file):
-            print("The parameter file (%s) does not exist" %
-                  (opts.add_param_file,))
-            sys.exit(1)
-        path += "," + str(opts.add_param_file)
-        progress("Adding parameters from (%s)" % (str(opts.add_param_file),))
+
+        files = opts.add_param_file.split(',')
+
+        for file in files:
+            if not os.path.isfile(file):
+                print("The parameter file (%s) does not exist" %
+                      (file,))
+                sys.exit(1)
+            progress("Path: %s" % path)
+            progress("Arg: %s" % str(opts.add_param_file))
+            
+            if path is not None:
+                path += "," + str(file)
+            else:
+                path = str(file)
+
+            progress("Adding parameters from (%s)" % (str(file),))
     if opts.OSDMSP:
         path += "," + os.path.join(root_dir, "libraries/AP_MSP/Tools/osdtest.parm")
         path += "," + os.path.join(autotest_dir, "default_params/msposd.parm")
