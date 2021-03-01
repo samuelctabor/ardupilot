@@ -4873,7 +4873,7 @@ class AutoTest(ABC):
 Also, ignores heartbeats not from our target system'''
         if drain_mav:
             self.drain_mav(quiet=quiet)
-        orig_timeout = x.get("timeout", 20)
+        orig_timeout = x.get("timeout", 2000)
         x["timeout"] = 1
         tstart = time.time()
         while True:
