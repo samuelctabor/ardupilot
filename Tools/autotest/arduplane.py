@@ -1780,6 +1780,9 @@ class AutoTestPlane(AutoTest):
             3: 1500, # Use trim airspeed.
         });
 
+        self.set_parameter("SIM_WIND_DIR",0)
+        self.set_parameter("SIM_WIND_SPD",1)
+
         # Wait to detect thermal
         self.progress("Waiting for thermal")
         self.wait_mode('THERMAL',timeout=600)
@@ -1793,6 +1796,7 @@ class AutoTestPlane(AutoTest):
         self.progress("Waiting for AUTO mode")
         self.wait_mode('AUTO')
 
+        self.delay_sim_time(30.0);
         # Disable thermals
         self.set_parameter("SIM_THML_SCENARI", 0)
 

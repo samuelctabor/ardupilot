@@ -173,6 +173,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
 SoaringController::SoaringController(AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms) :
     _spdHgt(spdHgt),
     _vario(parms,_polarParams),
+    _speedToFly(_polarParams),
     _aparm(parms),
     _throttle_suppressed(true)
 {
@@ -401,8 +402,27 @@ void SoaringController::update_thermalling()
 
 void SoaringController::update_cruising()
 {
-    // Reserved for future tasks that need to run continuously while in FBWB or AUTO mode,
-    // for example, calculation of optimal airspeed and flap angle.
+    // Calculate the optimal airspeed for the current conditions of wind along current direction,
+    // expected lift in next thermal and filtered sink rate.
+
+    Vector3f wind    = AP::ahrs().wind_estimate();
+    Vector3f wind_bf = AP::ahrs().earth_to_body(wind);
+
+    // Constraints on the airspeed calculation.
+    const float CLmin = _polarParams.K/(_aparm.airspeed_max*_aparm.airspeed_max);
+    const float CLmax = _polarParams.K/(_aparm.airspeed_min*_aparm.airspeed_min);
+
+    // Update the calculation.
+    _speedToFly.update(wind_bf.x, _vario.filtered_reading, thermal_vspeed, CLmin, CLmax);
+
+    AP::logger().Write("SORC", "TimeUS,wx,wz,wexp,CLmin,CLmax,Vopt", "Qffffff",
+                                       AP_HAL::micros64(),
+                                       (double)wind_bf.x,
+                                       (double)_vario.filtered_reading,
+                                       (double)thermal_vspeed,
+                                       (double)CLmin,
+                                       (double)CLmax,
+                                       (double)_speedToFly.speed_to_fly());
 }
 
 void SoaringController::update_vario()
@@ -541,6 +561,9 @@ float SoaringController::get_target_airspeed_thermalling()
 
 float SoaringController::get_target_airspeed_cruising()
 {
+    if (soar_cruise_airspeed<0) {
+        return _speedToFly.speed_to_fly();
+    }
     return soar_cruise_airspeed;
 }
 
