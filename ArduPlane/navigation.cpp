@@ -205,7 +205,7 @@ void Plane::calc_airspeed_errors()
             } else {
                 target_airspeed_cm = aparm.airspeed_cruise_cm;
             }
-        } else if (control_mode == &mode_auto) {
+        } else if (control_mode == &mode_auto && g2.soaring_controller.get_throttle_suppressed()) {
             float arspd = g2.soaring_controller.get_target_airspeed_cruising();
 
             if (arspd>0) {
