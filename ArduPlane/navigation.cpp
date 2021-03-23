@@ -197,7 +197,7 @@ void Plane::calc_airspeed_errors()
             target_airspeed_cm = aparm.airspeed_cruise_cm;
         }
     } else if (g2.soaring_controller.is_active()) {
-        if (control_mode == &mode_loiter) {
+        if (control_mode == &mode_thermal) {
             float arspd = g2.soaring_controller.get_target_airspeed_thermalling();
 
             if (arspd>0) {
