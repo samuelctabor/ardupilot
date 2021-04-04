@@ -33,7 +33,7 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     _aspd_filt_constrained = _aspd_filt>minV ? _aspd_filt : minV;
 
 
-    tau = calculate_circling_time_constant();
+    tau = calculate_circling_time_constant(radians(thermal_bank));
 
     float dt = (float)(AP_HAL::micros64() - _prev_update_time)/1e6;
 
@@ -128,14 +128,14 @@ float Variometer::calculate_aircraft_sinkrate(float phi) const
     return _aspd_filt_constrained * (C1 + C2 / (cosphi * cosphi));
 }
 
-float Variometer::calculate_circling_time_constant()
+float Variometer::calculate_circling_time_constant(float thermal_bank)
 {
     // Calculate a time constant to use to filter quantities over a full thermal orbit.
     // This is used for rejecting variation in e.g. climb rate, or estimated climb rate
     // potential, as the aircraft orbits the thermal.
     // Use the time to circle - variations at the circling frequency then have a gain of 25%
     // and the response to a step input will reach 64% of final value in three orbits.
-    return _aparm.loiter_radius*2*M_PI/_aspd_filt_constrained;
+    return 2*M_PI*_aspd_filt_constrained/(GRAVITY_MSS*tanf(thermal_bank));
 }
 
 
