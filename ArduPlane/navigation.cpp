@@ -196,7 +196,7 @@ void Plane::calc_airspeed_errors()
             // fallover to normal airspeed
             target_airspeed_cm = aparm.airspeed_cruise_cm;
         }
-    } else if (g2.soaring_controller.is_active()) {
+    } else if (g2.soaring_controller.is_active() && g2.soaring_controller.get_throttle_suppressed()) {
         if (control_mode == &mode_thermal) {
             float arspd = g2.soaring_controller.get_target_airspeed_thermalling();
 
@@ -205,7 +205,7 @@ void Plane::calc_airspeed_errors()
             } else {
                 target_airspeed_cm = aparm.airspeed_cruise_cm;
             }
-        } else if (control_mode == &mode_auto && g2.soaring_controller.get_throttle_suppressed()) {
+        } else if (control_mode == &mode_auto) {
             float arspd = g2.soaring_controller.get_target_airspeed_cruising();
 
             if (arspd>0) {
