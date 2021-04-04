@@ -10,9 +10,10 @@ Variometer::Variometer(const AP_Vehicle::FixedWing &parms, PolarParams &polarPar
     _aparm(parms),
     _polarParams(polarParams)
 {
-    _climb_filter = LowPassFilter<float>(1.0/60.0);
-
-    _vdot_filter2 = LowPassFilter<float>(1.0f/60.0f);
+    _climb_filter    = LowPassFilter<float>(1.0f/60.0f);
+    _audio_filter    = LowPassFilter<float>(1.0f/0.71f);
+    _trigger_filter  = LowPassFilter<float>(1.0f/4.06f);
+    _vdotbias_filter = LowPassFilter<float>(1.0f/60.0f);
 }
 
 void Variometer::update(const float thermal_bank, float exp_e_rate)
@@ -47,8 +48,8 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     float dsp = _vdot_filter.apply(temp);
 
     // Now we need to high-pass this signal to remove bias.
-    _vdot_filter2.set_cutoff_frequency(1/(20*tau));
-    float dsp_bias = _vdot_filter2.apply(temp, dt);
+    _vdotbias_filter.set_cutoff_frequency(1/(20*tau));
+    float dsp_bias = _vdotbias_filter.apply(temp, dt);
     
     float dsp_cor = dsp - dsp_bias;
 
@@ -72,8 +73,9 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     reading = raw_climb_rate + dsp_cor*_aspd_filt_constrained/GRAVITY_MSS + sinkrate - thr_climb;
     
 
-    filtered_reading = TE_FILT * reading + (1 - TE_FILT) * filtered_reading;                       // Apply low pass timeconst filter for noise
-    displayed_reading = TE_FILT_DISPLAYED * reading + (1 - TE_FILT_DISPLAYED) * displayed_reading;
+    filtered_reading = _trigger_filter.apply(reading, dt); // Apply low pass timeconst filter for noise
+
+    displayed_reading = _audio_filter.apply(reading, dt); // Apply low pass timeconst filter for noise
 
     _prev_update_time = AP_HAL::micros64();
 

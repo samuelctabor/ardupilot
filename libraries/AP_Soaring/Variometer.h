@@ -11,10 +11,6 @@ Manages the estimation of aircraft total energy, drag and vertical air velocity.
 #include <Filter/AverageFilter.h>
 #include "EKF_Polar.h"
 
-#define ASPD_FILT 0.05
-#define TE_FILT 0.03
-#define TE_FILT_DISPLAYED 0.15
-
 static constexpr const uint32_t LEARN_THRESHOLD_TIME = 5000;
 static constexpr const float    LEARN_THRESHOLD_ROLL = 0.2f;
 
@@ -35,10 +31,20 @@ class Variometer {
 
     AverageFilterFloat_Size5 _sp_filter;
 
-    // low pass filter @ 30s time constant
+    /*
+     low pass filters for various purposes.
+     */
+    // Climb rate filter for monitoring progress in thermal.
     LowPassFilter<float> _climb_filter;
 
-    LowPassFilter<float> _vdot_filter2;
+    // Fast filter for mavlink/audio vario output.
+    LowPassFilter<float> _audio_filter;
+
+    // Slower filter for deciding to enter THERMAL mode.
+    LowPassFilter<float> _trigger_filter;
+
+    // Longitudinal acceleration bias filter.
+    LowPassFilter<float> _vdotbias_filter;
 
     EKF_Polar _learn_EKF;
     bool _learn_initialised = false;
