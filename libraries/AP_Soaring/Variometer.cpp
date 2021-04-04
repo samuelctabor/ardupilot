@@ -27,12 +27,12 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     if (!_ahrs.airspeed_estimate(aspd)) {
             aspd = _aparm.airspeed_cruise_cm / 100.0f;
     }
-    _aspd_filt = _sp_filter.apply(aspd);
+
+    float aspd_filt = _sp_filter.apply(aspd);
 
     // Constrained airspeed.
     const float minV = sqrtf(_polarParams.K/1.5);
     _aspd_filt_constrained = _aspd_filt>minV ? _aspd_filt : minV;
-
 
     tau = calculate_circling_time_constant(radians(thermal_bank));
 
@@ -55,13 +55,15 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
 
 
     Vector3f velned;
+
+    float raw_climb_rate = 0.0f;
     if (_ahrs.get_velocity_NED(velned)) {
         // if possible use the EKF vertical velocity
         raw_climb_rate = -velned.z;
     }
     
     _climb_filter.set_cutoff_frequency(1/(3*tau));
-    smoothed_climb_rate = _climb_filter.apply(raw_climb_rate, dt);
+    float smoothed_climb_rate = _climb_filter.apply(raw_climb_rate, dt);
 
     // Compute still-air sinkrate
     float roll = _ahrs.roll;
@@ -73,9 +75,9 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     reading = raw_climb_rate + dsp_cor*_aspd_filt_constrained/GRAVITY_MSS + sinkrate - thr_climb;
     
 
-    filtered_reading = _trigger_filter.apply(reading, dt); // Apply low pass timeconst filter for noise
+    float filtered_reading = _trigger_filter.apply(reading, dt); // Apply low pass timeconst filter for noise
 
-    displayed_reading = _audio_filter.apply(reading, dt); // Apply low pass timeconst filter for noise
+    _audio_filter.apply(reading, dt); // Apply low pass timeconst filter for noise
 
     _prev_update_time = AP_HAL::micros64();
 

@@ -21,7 +21,6 @@ class Variometer {
     // store time of last update
     uint64_t _prev_update_time;
 
-    float _aspd_filt;
     float _aspd_filt_constrained;
 
     float _expected_thermalling_sink;
@@ -61,18 +60,22 @@ public:
 
     float alt;
     float reading;
-    float filtered_reading;
-    float displayed_reading;
-    float raw_climb_rate;
-    float smoothed_climb_rate;
     float tau;
 
     void update(const float thermal_bank, float exp_e_rate);
     float calculate_aircraft_sinkrate(float phi) const;
 
-    void reset_filter(float value) { _climb_filter.reset(value);}
+    void reset_climb_filter(float value) { _climb_filter.reset(value);}
 
-    float get_airspeed(void) const {return _aspd_filt;};
+    void reset_trigger_filter(float value) { _trigger_filter.reset(value);}
+
+    float get_airspeed(void) const {return _aspd_filt_constrained;};
+
+    float get_displayed_value(void) const {return _audio_filter.get();};
+
+    float get_filtered_climb(void) const {return _climb_filter.get();};
+
+    float get_trigger_value(void) const {return _trigger_filter.get();};
 
     float get_exp_thermalling_sink(void) const {return _expected_thermalling_sink;};
 
