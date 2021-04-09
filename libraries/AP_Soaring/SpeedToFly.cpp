@@ -20,7 +20,7 @@ void SpeedToFly::update(float Wx, float Wz, float Wexp, float CLmin, float CLmax
     float sqrtfk   = sqrtf(_polarParams.K);
     float minSink = (sqrtfk/sqrtf(CLmax)*(_polarParams.CD0 + _polarParams.B*CLmax*CLmax))/CLmax;
 
-    if ((minSink+Wz) < 0.0f) {
+    if ((minSink+Wz+Wexp) < 0.0f) {
         // Special case. If lift is greater than min sink speed, fly at min sink
         // speed.
         _CL_estimate = CLmax;
