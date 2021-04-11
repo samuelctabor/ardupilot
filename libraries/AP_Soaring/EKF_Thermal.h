@@ -9,9 +9,9 @@ Extended Kalman Filter class by Sam Tabor, 2013.
 
 #include <AP_Math/matrixN.h>
 
-class ExtendedKalmanFilter {
+class EKF_Thermal {
 public:
-    ExtendedKalmanFilter(void) {}
+    EKF_Thermal(void) {}
 
     static constexpr const uint8_t N = 4;
 
