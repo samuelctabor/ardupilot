@@ -409,17 +409,21 @@ void SoaringController::update_cruising()
     Vector3f wind    = AP::ahrs().wind_estimate();
     Vector3f wind_bf = AP::ahrs().earth_to_body(wind);
 
+    const float wz = wind_bf.x;
+
+    const float wz = _vario.get_stf_value();
+
     // Constraints on the airspeed calculation.
     const float CLmin = _polarParams.K/(_aparm.airspeed_max*_aparm.airspeed_max);
     const float CLmax = _polarParams.K/(_aparm.airspeed_min*_aparm.airspeed_min);
 
     // Update the calculation.
-    _speedToFly.update(wind_bf.x, _vario.filtered_reading, thermal_vspeed, CLmin, CLmax);
+    _speedToFly.update(wx, wz, thermal_vspeed, CLmin, CLmax);
 
     AP::logger().Write("SORC", "TimeUS,wx,wz,wexp,CLmin,CLmax,Vopt", "Qffffff",
                                        AP_HAL::micros64(),
-                                       (double)wind_bf.x,
-                                       (double)_vario.filtered_reading,
+                                       (double)wx,
+                                       (double)wz,
                                        (double)thermal_vspeed,
                                        (double)CLmin,
                                        (double)CLmax,
