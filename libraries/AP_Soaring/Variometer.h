@@ -45,6 +45,9 @@ class Variometer {
     // Longitudinal acceleration bias filter.
     LowPassFilter<float> _vdotbias_filter;
 
+    // Speed to fly vario filter.
+    LowPassFilter<float> _stf_filter;
+
     EKF_Polar _learn_EKF;
     bool _learn_initialised = false;
     uint32_t _learn_skipped_time   = 0;
@@ -76,6 +79,8 @@ public:
     float get_filtered_climb(void) const {return _climb_filter.get();};
 
     float get_trigger_value(void) const {return _trigger_filter.get();};
+
+    float get_stf_value(void) const {return _stf_filter.get();};
 
     float get_exp_thermalling_sink(void) const {return _expected_thermalling_sink;};
 
