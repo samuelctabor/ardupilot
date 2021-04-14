@@ -33,7 +33,7 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
 
     // Constrained airspeed.
     const float minV = sqrtf(_polarParams.K/1.5);
-    _aspd_filt_constrained = _aspd_filt>minV ? _aspd_filt : minV;
+    _aspd_filt_constrained = aspd_filt>minV ? aspd_filt : minV;
 
     tau = calculate_circling_time_constant(radians(thermal_bank));
 
@@ -49,22 +49,25 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     float dsp = _vdot_filter.apply(temp);
 
     // Now we need to high-pass this signal to remove bias.
-    _vdotbias_filter.set_cutoff_frequency(1/(20*tau));
+    _vdotbias_filter.set_cutoff_frequency(1.0f/(20.0f*tau));
     float dsp_bias = _vdotbias_filter.apply(temp, dt);
     
     float dsp_cor = dsp - dsp_bias;
 
+    _stf_filter.set_cutoff_frequency(1.0f/tau);
+    _trigger_filter.set_cutoff_frequency(2.0f/tau);
+
 
     Vector3f velned;
 
-    float raw_climb_rate = 0.0f;
+    _raw_climb_rate = 0.0f;
     if (_ahrs.get_velocity_NED(velned)) {
         // if possible use the EKF vertical velocity
-        raw_climb_rate = -velned.z;
+        _raw_climb_rate = -velned.z;
     }
     
-    _climb_filter.set_cutoff_frequency(1/(3*tau));
-    float smoothed_climb_rate = _climb_filter.apply(raw_climb_rate, dt);
+    _climb_filter.set_cutoff_frequency(1.0f/(3.0f*tau));
+    float smoothed_climb_rate = _climb_filter.apply(_raw_climb_rate, dt);
 
     // Compute still-air sinkrate
     float roll = _ahrs.roll;
@@ -73,7 +76,7 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
     // Add contribution from throttle
     float thr_climb = exp_e_rate/GRAVITY_MSS;
 
-    reading = raw_climb_rate + dsp_cor*_aspd_filt_constrained/GRAVITY_MSS + sinkrate - thr_climb;
+    reading = _raw_climb_rate + dsp_cor*_aspd_filt_constrained/GRAVITY_MSS + sinkrate - thr_climb;
     
     // Update filters.
 
@@ -110,7 +113,7 @@ void Variometer::update(const float thermal_bank, float exp_e_rate)
                        (double)roll,
                        (double)reading,
                        (double)filtered_reading,
-                       (double)raw_climb_rate,
+                       (double)_raw_climb_rate,
                        (double)smoothed_climb_rate,
                        (double)_expected_thermalling_sink,
                        (double)dsp,
@@ -184,10 +187,12 @@ void Variometer::update_polar_learning(bool learn_enabled, bool throttle_suppres
     // Conditioned on throttle, speed, roll, rate of change of speed target
     float roll = AP::ahrs().roll;
 
+
+
     if (!throttle_suppressed ||
             abs(roll) > LEARN_THRESHOLD_ROLL ||
-            _aspd_filt < 0.7*_aparm.airspeed_min ||
-            _aspd_filt > 1.3*_aparm.airspeed_max ||
+            _aspd_filt_constrained < 0.7*_aparm.airspeed_min ||
+            _aspd_filt_constrained > 1.3*_aparm.airspeed_max ||
             abs(dsp_dem) > 0.2) {
         // Conditions not ok.
         _learn_skipped_time = AP_HAL::millis();
@@ -200,11 +205,11 @@ void Variometer::update_polar_learning(bool learn_enabled, bool throttle_suppres
             _learn_initialised = true;
         }
 
-        const float u[3] = {_aspd_filt, roll, _polarParams.K};
+        const float u[3] = {_aspd_filt_constrained, roll, _polarParams.K};
         const VectorN<float,3> u_in{u};
 
         // update the filter
-        float input = -raw_climb_rate;
+        float input = -_raw_climb_rate;
         _learn_EKF.update(input, u_in);
 
         // Save parameters if changed by >0.1%
@@ -222,10 +227,10 @@ void Variometer::update_polar_learning(bool learn_enabled, bool throttle_suppres
         // Log data
         AP::logger().Write("PLRN", "TimeUS,aspd,roll,K,z,CD0,B", "Qffffff",
                    AP_HAL::micros64(),
-                   (double)_aspd_filt,
+                   (double)_aspd_filt_constrained,
                    (double)roll,
                    (double)_polarParams.K,
-                   (double)raw_climb_rate,
+                   (double)_raw_climb_rate,
                    (double)_learn_EKF.X[0],
                    (double)_learn_EKF.X[1]);
     }

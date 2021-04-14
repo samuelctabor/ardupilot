@@ -21,6 +21,8 @@ class Variometer {
     // store time of last update
     uint64_t _prev_update_time;
 
+    float _raw_climb_rate;
+
     float _aspd_filt_constrained;
 
     float _expected_thermalling_sink;

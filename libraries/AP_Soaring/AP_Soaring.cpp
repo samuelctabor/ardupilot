@@ -409,7 +409,7 @@ void SoaringController::update_cruising()
     Vector3f wind    = AP::ahrs().wind_estimate();
     Vector3f wind_bf = AP::ahrs().earth_to_body(wind);
 
-    const float wz = wind_bf.x;
+    const float wx = wind_bf.x;
 
     const float wz = _vario.get_stf_value();
 
