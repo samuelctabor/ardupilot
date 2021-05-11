@@ -228,7 +228,7 @@ void AP_AltitudePlanner::set_target_altitude_current()
 #if AP_TERRAIN_AVAILABLE
     // also record the terrain altitude if possible
     float terrain_altitude;
-    if (_terrain_enabled && _terrain->height_above_terrain(terrain_altitude, true)) {
+    if (_terrain_enabled && AP::terrain()->height_above_terrain(terrain_altitude, true)) {
         _target_terrain_following = true;
         _target_terrain_alt_cm = terrain_altitude*100;
     } else {
@@ -270,7 +270,7 @@ void AP_AltitudePlanner::set_target_altitude_location(const Location &loc)
       terrain altitude
      */
     float height;
-    if (loc.terrain_alt && _terrain->height_above_terrain(height, true)) {
+    if (loc.terrain_alt && AP::terrain()->height_above_terrain(height, true)) {
         _target_terrain_following = true;
         _target_terrain_alt_cm = loc.alt;
         if (!loc.relative_alt) {
@@ -292,7 +292,7 @@ int32_t AP_AltitudePlanner::relative_target_altitude_cm(float lookahead_adjustme
 #if AP_TERRAIN_AVAILABLE
     float relative_home_height;
     if (_target_terrain_following &&
-        _terrain->height_relative_home_equivalent(_target_terrain_alt_cm*0.01f,
+        AP::terrain()->height_relative_home_equivalent(_target_terrain_alt_cm*0.01f,
                                                 relative_home_height, true)) {
         // add lookahead adjustment the target altitude
         _target_lookahead = lookahead_adjustment;
@@ -382,7 +382,7 @@ int32_t AP_AltitudePlanner::calc_altitude_error_cm()
 #if AP_TERRAIN_AVAILABLE
     float terrain_height;
     if (is_terrain_following() && 
-        _terrain->height_above_terrain(terrain_height, true)) {
+        AP::terrain()->height_above_terrain(terrain_height, true)) {
         return _target_lookahead*100 + _target_terrain_alt_cm - (terrain_height*100);
     }
 #endif
@@ -446,7 +446,7 @@ void AP_AltitudePlanner::set_offset_altitude_location(const Location &loc, bool 
     float height;
     if (loc.terrain_alt && 
         is_terrain_following() &&
-        _terrain->height_above_terrain(height, true)) {
+        AP::terrain()->height_above_terrain(height, true)) {
         _target_offset_cm = _target_terrain_alt_cm - (height * 100);
     }
 #endif
@@ -488,7 +488,7 @@ bool AP_AltitudePlanner::above_location(const Location &loc1, const Location &lo
 #if AP_TERRAIN_AVAILABLE
     float terrain_alt;
     if (loc2.terrain_alt && 
-        _terrain->height_above_terrain(terrain_alt, true)) {
+        AP::terrain()->height_above_terrain(terrain_alt, true)) {
         float loc2_alt = loc2.alt*0.01f;
         if (!loc2.relative_alt) {
             loc2_alt -= AP::ahrs().get_home().alt*0.01f;
@@ -566,7 +566,7 @@ float AP_AltitudePlanner::height_above_target(const Location& loc, const Locatio
     // also record the terrain altitude if possible
     float terrain_altitude;
     if (target_loc.terrain_alt &&
-        _terrain->height_above_terrain(terrain_altitude, true)) {
+        AP::terrain()->height_above_terrain(terrain_altitude, true)) {
         return terrain_altitude - target_alt;
     }
 #endif

@@ -165,8 +165,6 @@ void Plane::init_ardupilot()
 
 #if AP_TERRAIN_AVAILABLE
     Location::set_terrain(&terrain);
-
-    altitudePlanner.set_terrain(&terrain);
 #endif
 }
 

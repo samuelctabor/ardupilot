@@ -21,9 +21,6 @@ public:
     */
     void set_terrain_enabled(bool enabled) {_terrain_enabled = enabled; }
 
-    /// provide pointer to terrain database
-    void set_terrain(AP_Terrain* terrain_ptr) { _terrain = terrain_ptr; }
-
     /*
     setup for a gradual glide slope to the next waypoint, if appropriate
     */
@@ -152,7 +149,6 @@ private:
 
     float _mission_alt_offset;
 
-    AP_Terrain              *_terrain; // pointer to terrain source
     const AP_Vehicle::FixedWing &_aparm;
 
 
