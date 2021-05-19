@@ -12,9 +12,9 @@ Variometer::Variometer(const AP_Vehicle::FixedWing &parms, PolarParams &polarPar
 {
     _climb_filter    = LowPassFilter<float>(1.0f/60.0f);
     _audio_filter    = LowPassFilter<float>(1.0f/0.71f);
-    _trigger_filter  = LowPassFilter<float>(1.0f/4.06f);
+    _trigger_filter  = LowPassFilter<float>(1.0f/6.0f);
     _vdotbias_filter = LowPassFilter<float>(1.0f/60.0f);
-    _stf_filter      = LowPassFilter<float>(1.0f/10.0f);
+    _stf_filter      = LowPassFilter<float>(1.0f/20.0f);
 }
 
 void Variometer::update(const float thermal_bank, float exp_e_rate)
