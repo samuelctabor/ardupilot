@@ -142,6 +142,12 @@ public:
     enum AP_BattMonitor_Params::BattMonitor_Type get_type() const { return get_type(AP_BATT_PRIMARY_INSTANCE); }
     enum AP_BattMonitor_Params::BattMonitor_Type get_type(uint8_t instance) const { return _params[instance].type(); }
 
+    /// get_serial_number - returns battery serial number
+    int32_t get_serial_number() const { return get_serial_number(AP_BATT_PRIMARY_INSTANCE); }
+    int32_t get_serial_number(uint8_t instance) const {
+        return _params[instance]._serial_number;
+    }
+
     /// true when (voltage * current) > watt_max
     bool overpower_detected() const;
     bool overpower_detected(uint8_t instance) const;
