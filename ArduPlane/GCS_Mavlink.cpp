@@ -1093,6 +1093,8 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
 
         // a manual control message is considered to be a 'heartbeat' from the ground station for failsafe purposes
         plane.failsafe.last_heartbeat_ms = tnow;
+        plane.failsafe.last_valid_rc_ms  = AP_HAL::millis();
+
         break;
     }
     
