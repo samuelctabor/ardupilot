@@ -1362,6 +1362,7 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
 void GCS_MAVLINK_Plane::handle_rc_channels_override(const mavlink_message_t &msg)
 {
     plane.failsafe.last_heartbeat_ms = AP_HAL::millis();
+    plane.failsafe.last_valid_rc_ms  = AP_HAL::millis();
     GCS_MAVLINK::handle_rc_channels_override(msg);
 }
 
