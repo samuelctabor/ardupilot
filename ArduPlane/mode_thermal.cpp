@@ -68,9 +68,9 @@ void ModeThermal::update_soaring()
     }
 
     // Get the status of the soaring controller cruise checks.
-    const SoaringController::LoiterStatus loiterStatus = plane.g2.soaring_controller.check_cruise_criteria(prev_wp/100, next_wp/100);
+    const SoaringController::ThermalStatus thermalStatus = plane.g2.soaring_controller.check_cruise_criteria(prev_wp/100, next_wp/100);
 
-    if (loiterStatus == SoaringController::LoiterStatus::GOOD_TO_KEEP_LOITERING) {
+    if (thermalStatus == SoaringController::ThermalStatus::THERMAL_OK) {
         // Reset loiter angle, so that the loiter exit heading criteria
         // only starts expanding when we're ready to exit.
         plane.loiter.sum_cd = 0;
@@ -86,30 +86,30 @@ void ModeThermal::update_soaring()
     const uint32_t time_in_loiter_ms = AP_HAL::millis() - plane.soaring_mode_timer_ms;
     const uint32_t timeout = MIN(1000*plane.g2.soaring_controller.get_circling_time(), 20000);
 
-    if (!exit_heading_aligned() && loiterStatus != SoaringController::LoiterStatus::ALT_TOO_LOW && time_in_loiter_ms < timeout) {
+    if (!exit_heading_aligned() && thermalStatus != SoaringController::ThermalStatus::ALT_TOO_LOW && time_in_loiter_ms < timeout) {
         // Heading not lined up, and not timed out or in a condition requiring immediate exit.
         return;
     }
 
     // Heading lined up and loiter status not good to continue. Need to restore previous mode.
-    switch (loiterStatus) {
-    case SoaringController::LoiterStatus::ALT_TOO_HIGH:
+    switch (thermalStatus) {
+    case SoaringController::ThermalStatus::ALT_TOO_HIGH:
         restore_mode("Too high", ModeReason::SOARING_ALT_TOO_HIGH);
         break;
-    case SoaringController::LoiterStatus::ALT_TOO_LOW:
+    case SoaringController::ThermalStatus::ALT_TOO_LOW:
         restore_mode("Too low", ModeReason::SOARING_ALT_TOO_LOW);
         break;
     default:
-    case SoaringController::LoiterStatus::THERMAL_WEAK:
+    case SoaringController::ThermalStatus::THERMAL_WEAK:
         restore_mode("Thermal ended", ModeReason::SOARING_THERMAL_ESTIMATE_DETERIORATED);
         break;
-    case SoaringController::LoiterStatus::DRIFT_EXCEEDED:
+    case SoaringController::ThermalStatus::DRIFT_EXCEEDED:
         restore_mode("Drifted too far", ModeReason::SOARING_DRIFT_EXCEEDED);
         break;
-    case SoaringController::LoiterStatus::EXIT_COMMANDED:
+    case SoaringController::ThermalStatus::EXIT_COMMANDED:
         restore_mode("Exit via RC switch", ModeReason::RC_COMMAND);
         break;
-    } // switch loiterStatus
+    } // switch thermalStatus
 }
 
 void ModeThermal::navigate()
