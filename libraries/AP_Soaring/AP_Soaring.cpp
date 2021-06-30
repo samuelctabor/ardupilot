@@ -473,3 +473,5 @@ float SoaringController::get_thermalling_radius() const
 }
 
 #endif // HAL_SOARING_ENABLED
+
+// Random change for test purposes.
